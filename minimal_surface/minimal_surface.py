@@ -34,8 +34,11 @@ def brep_centroid(brep):
     volume, centroid = gh.Volume(brep)
     return centroid
 
-#def line_generate(pt1, pt2):
-#    return gh.Line(pt1, pt2)
+def line_generate(pt1, pt2):
+    return gh.Line(pt1, pt2)
+
+def line_evaluate(line, place):
+    return gh.EvaluateLength(line, place, True)
 
 def twopoint_midpoint(pt1, pt2):
     x = (pt1[0]+pt2[0]) * 0.5
@@ -44,9 +47,14 @@ def twopoint_midpoint(pt1, pt2):
     midpoint = gh.ConstructPoint(x,y,z)
     return midpoint
 
+def plane_generate(pt1, pt2, pt3):
+    return gh.Plane3Pt(pt1, pt2, pt3)
+
 
 
 if __name__ == "__main__":
+    
+    # 1.  set parameter
     root_2 = square_root(2)
     root_3 = square_root(3)
     temp_1 = subtraction(1, slider)
@@ -58,13 +66,26 @@ if __name__ == "__main__":
     parameter_d = subtraction(1, parameter_c)
     parameter_d = multiplication(parameter_d, root_3)
     parameter_d = subtraction(1, parameter_d)
-
-    base = base_boundary([-100,0,0], 50)
-    base_edges, base_vertices = brep_elements(base)
     
-
+    # 2. minimal surface base boundary
+    base = base_boundary([-100,0,0], 50)
+    
+    # 3. base point & line for minimal surface generate
+    base_edges, base_vertices = brep_elements(base)
     point_a = base_vertices[4]
     point_b = base_vertices[5]
     point_mid = twopoint_midpoint(base_vertices[1], base_vertices[4])
     point_inside = brep_centroid(base)
     
+    line_1 = line_generate(point_a, point_mid)
+    line_2 = line_generate(point_mid, point_inside)
+    line_3 = line_generate(point_b, point_inside)
+    line_4 = base_edges[4]
+    line_1_pt = line_evaluate(line_1, parameter_b)
+    line_2_pt = line_evaluate(line_2, parameter_d)
+    line_3_pt = line_evaluate(line_3, parameter_b)
+    line_4_pt = line_evaluate(line_4, parameter_a)
+    
+    # 4. minimal surface edges generate
+    
+    print(parameter_a, parameter_b, parameter_c, parameter_d)
