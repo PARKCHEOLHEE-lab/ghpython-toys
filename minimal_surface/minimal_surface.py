@@ -38,7 +38,7 @@ def line_generate(pt1, pt2):
     return gh.Line(pt1, pt2)
 
 def line_evaluate(line, place):
-    return gh.EvaluateLength(line, place, True)
+    return gh.EvaluateLength(line, place, True)[0]
 
 def twopoint_midpoint(pt1, pt2):
     x = (pt1[0]+pt2[0]) * 0.5
@@ -50,6 +50,14 @@ def twopoint_midpoint(pt1, pt2):
 def plane_generate(pt1, pt2, pt3):
     return gh.Plane3Pt(pt1, pt2, pt3)
 
+def plane_origin(plane, origin):
+    return gh.PlaneOrigin(plane, origin)
+
+def vector_twopoint(pt1, pt2):
+    return gh.Vector2Pt(pt1, pt2, False)[0]
+
+def vector_rotate(vector, angle, axis):
+    return rs.VectorRotate(vector, angle, axis)
 
 
 if __name__ == "__main__":
@@ -67,8 +75,10 @@ if __name__ == "__main__":
     parameter_d = multiplication(parameter_d, root_3)
     parameter_d = subtraction(1, parameter_d)
     
+    
     # 2. minimal surface base boundary
     base = base_boundary([-100,0,0], 50)
+    
     
     # 3. base point & line for minimal surface generate
     base_edges, base_vertices = brep_elements(base)
@@ -86,6 +96,13 @@ if __name__ == "__main__":
     line_3_pt = line_evaluate(line_3, parameter_b)
     line_4_pt = line_evaluate(line_4, parameter_a)
     
-    # 4. minimal surface edges generate
     
-    print(parameter_a, parameter_b, parameter_c, parameter_d)
+    # 4. minimal surface edges generate
+    angle_1 = math.pi * -0.5
+    angle_2 = math.pi * 0.5
+    line_1_plane = plane_generate(point_mid, point_a, point_b)
+    line_1_plane = plane_origin(line_1_plane, line_4_pt)
+    a = vector_twopoint(point_b, point_a)
+    b = rs.VectorRotate(a, angle_1, [0,0,1])
+#    c = rg.Vector3d.Rotate(a, angle_1, 
+    c = plane_generate(point_mid, point_a, point_b)
