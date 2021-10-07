@@ -71,7 +71,7 @@ if __name__ == "__main__":
     temp_1 = subtraction(1, slider)
     temp_2 = division(2, root_3)
     
-    parameter_a = slider
+    parameter_a = 0.5
     parameter_b = multiplication(root_2, temp_1)
     parameter_c = multiplication(slider, temp_2)
     parameter_d = subtraction(1, parameter_c)
@@ -94,10 +94,15 @@ if __name__ == "__main__":
     line_2 = line_generate(point_mid, point_inside)
     line_3 = line_generate(point_b, point_inside)
     line_4 = base_edges[4]
-    line_1_pt = line_evaluate(line_1, parameter_b)
-    line_2_pt = line_evaluate(line_2, parameter_d)
-    line_3_pt = line_evaluate(line_3, parameter_b)
-    line_4_pt = line_evaluate(line_4, parameter_a)
+    print(line_1)
+    lines = [line_1, line_2, line_3, line_4]
+    params = [parameter_b, parameter_d, parameter_b, parameter_a]
+    line_pts = []
+    for i, param in enumerate(params):
+        line_pt = line_evaluate(lines[i], param)
+        line_pts.append(line_pt)
+    
+    line_1_pt, line_2_pt, line_3_pt, line_4_pt = line_pts
     
     
     # 4. minimal surface edges generate
@@ -111,8 +116,3 @@ if __name__ == "__main__":
     edge_4 = arc_generate(line_2_pt, line_1_pt, edge_4_vector)
     
     minimal_surface = surface_generate(edge_1, edge_2, edge_3, edge_4)
-    
-    # 5. surface mirroring
-    mirror_plane_1 = plane_generate(base_vertices[0], base_vertices[2], base_vertices[4])
-    mirror_plane_2 = plane_generate(base_vertices[1], base_vertices[3], base_vertices[5])
-    a = surface_mirror(minimal_surface, mirror_plane_1)
