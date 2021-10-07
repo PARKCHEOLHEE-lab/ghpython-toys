@@ -6,9 +6,6 @@ import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 
 
-def square_root(x):
-    return math.sqrt(x)
-
 def subtraction(a, b):
     return a-b
 
@@ -18,20 +15,21 @@ def multiplication(a, b):
 def division(a, b):
     return a/b
 
+def square_root(x):
+    return math.sqrt(x)
+
 def base_boundary(origin, size):
-    x_pt = origin[0]
-    y_pt = origin[1]
-    z_pt = origin[2]
-    origin_point = gh.ConstructPoint(x_pt, y_pt, z_pt)
+    x, y, z = origin[0], origin[1], origin[2]
+    origin_point = gh.ConstructPoint(x, y, z)
     boundary_box = gh.DomainBox(origin_point, size, size, size)
     return boundary_box
 
 def brep_elements(brep):
-    faces, edges, vertices = gh.DeconstructBrep(brep)
+    _, edges, vertices = gh.DeconstructBrep(brep)
     return edges, vertices
 
 def brep_centroid(brep):
-    volume, centroid = gh.Volume(brep)
+    _, centroid = gh.Volume(brep)
     return centroid
 
 def line_generate(pt1, pt2):
@@ -54,14 +52,19 @@ def plane_origin(plane, origin):
     return gh.PlaneOrigin(plane, origin)
 
 def vector_twopoint(pt1, pt2):
-    return gh.Vector2Pt(pt1, pt2, False)[0]
+    return pt2 - pt1
 
-def vector_rotate(vector, angle, axis):
-    return rs.VectorRotate(vector, angle, axis)
+def arc_generate(pt1, pt2, vector):
+    return gh.ArcSED(pt1, pt2, vector)[0]
+
+def surface_generate(edge_1, edge_2, edge_3, edge_4):
+    return gh.EdgeSurface(edge_1, edge_2, edge_3, edge_4)
+
+def surface_mirror(surface, plane):
+    return gh.Mirror(surface, plane)[0]
 
 
 if __name__ == "__main__":
-    
     # 1.  set parameter
     root_2 = square_root(2)
     root_3 = square_root(3)
@@ -98,11 +101,18 @@ if __name__ == "__main__":
     
     
     # 4. minimal surface edges generate
-    angle_1 = math.pi * -0.5
-    angle_2 = math.pi * 0.5
-    line_1_plane = plane_generate(point_mid, point_a, point_b)
-    line_1_plane = plane_origin(line_1_plane, line_4_pt)
-    a = vector_twopoint(point_b, point_a)
-    b = rs.VectorRotate(a, angle_1, [0,0,1])
-#    c = rg.Vector3d.Rotate(a, angle_1, 
-    c = plane_generate(point_mid, point_a, point_b)
+    edge_1_vector = vector_twopoint(line_4_pt, point_mid)
+    edge_2_vector = vector_twopoint(line_4_pt, point_inside)
+    edge_3_vector = vector_twopoint(point_mid, point_b)
+    edge_4_vector = vector_twopoint(point_mid, point_a)
+    edge_1 = arc_generate(line_4_pt, line_1_pt, edge_1_vector)
+    edge_2 = arc_generate(line_4_pt, line_3_pt, edge_2_vector)
+    edge_3 = arc_generate(line_2_pt, line_3_pt, edge_3_vector)
+    edge_4 = arc_generate(line_2_pt, line_1_pt, edge_4_vector)
+    
+    minimal_surface = surface_generate(edge_1, edge_2, edge_3, edge_4)
+    
+    # 5. surface mirroring
+    mirror_plane_1 = plane_generate(base_vertices[0], base_vertices[2], base_vertices[4])
+    mirror_plane_2 = plane_generate(base_vertices[1], base_vertices[3], base_vertices[5])
+    a = surface_mirror(minimal_surface, mirror_plane_1)
