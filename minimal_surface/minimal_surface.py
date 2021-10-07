@@ -94,7 +94,7 @@ if __name__ == "__main__":
     line_2 = line_generate(point_mid, point_inside)
     line_3 = line_generate(point_b, point_inside)
     line_4 = base_edges[4]
-    print(line_1)
+    
     lines = [line_1, line_2, line_3, line_4]
     params = [parameter_b, parameter_d, parameter_b, parameter_a]
     line_pts = []
