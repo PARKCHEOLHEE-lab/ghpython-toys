@@ -48,23 +48,26 @@ class Surface:
     def extrude_surface(self, direction):
         return rs.ExtrudeSurface(self.srf, direction)
         
+        
 class Auditorium:
     def __init__(self, step_height, step_width):
-        # Constant
         self.START_X = 110
         self.END_X = 270
         self.STEP_COUNT = 10
         self.STEP_X = 160
         self.STEP_Y = 0
+        self.CHAIR_Y = 5
         self.CEIL_Z = 65
-        self.DIRECTION = self.base_direction()
+        self.CHAIRS = 11
+        self.DIRECTION_A = self.auditorium_direction()
+        self.DIRECTION_C = self.chair_direction()
         
-        # Parameter
         self.step_width = step_width
         self.step_height = step_height
         self.base_pts = self.base_points()
         self.base_crvs = self.base_curves()
         self.auditorium = self.generate_auditorium()
+        self.auditorium_elements = self.elements_auditorium()
         
     def base_points(self):
         base_pts = [Point(self.START_X,0,0).generate_point()]
@@ -94,16 +97,42 @@ class Auditorium:
     def base_surface(self):
         return Surface(self.base_crvs).generate_surface()
         
-    def base_direction(self):
+    def auditorium_direction(self):
         pt1 = Point(self.STEP_Y, self.STEP_Y, self.STEP_Y).generate_point()
         pt2 = Point(self.STEP_Y ,self.CEIL_Z ,self.STEP_Y).generate_point()
         return Curve([pt1, pt2]).generate_curve()
         
-    def generate_auditorium(self):
-        return Surface(self.base_crvs).extrude_surface(self.DIRECTION)
+    def chair_direction(self):
+        pt1 = Point(self.STEP_Y, self.STEP_Y, self.STEP_Y).generate_point()
+        pt2 = Point(self.STEP_Y, self.CHAIR_Y, self.STEP_Y).generate_point()
+        return Curve([pt1, pt2]).generate_curve()
         
-    def deconstruct_auditorium(self):
-        return gh.DeconstructBrep(rs.coercebrep(self.auditorium))[1]
+    def generate_auditorium(self):
+        return Surface(self.base_crvs).extrude_surface(self.DIRECTION_A)
+        
+    def elements_auditorium(self):
+        try:
+            faces, edges, vertices = gh.DeconstructBrep(rs.coercebrep(self.auditorium))
+        except:
+            faces, edges, vertices = gh.DeconstructBrep(self.auditorium)
+        return faces, edges, vertices
+        
+    def generate_chairs(self, chair_pts):
+        chair_crv = Curve(chair_pts).generate_curve()
+        chair_srf = Surface(chair_crv).generate_surface()
+        chair_ori = rs.ExtrudeSurface(chair_srf, self.DIRECTION_C)
+        
+        auditorium_lines = self.auditorium_elements[1]
+        lines_index = [i for i in range(104, 140, 4)]
+        chairs = []
+        for i in lines_index:
+            base_curve = auditorium_lines[i]
+            base_points = gh.DivideCurve(base_curve, self.CHAIRS, False)[0]
+            base_points.pop(0); base_points.pop(-1)
+            for bp in base_points:
+                chair = rs.CopyObject(chair_ori, bp)
+                chairs.append(chair)
+        return chairs
         
     def calculate_height(self):
         return rs.Distance(self.base_pts[-3], self.base_pts[-4])
@@ -114,4 +143,7 @@ if __name__ == "__main__":
     auditorium = Auditorium(step_height, step_width)
     auditorium_height = auditorium.calculate_height()
     auditorium_brep = auditorium.generate_auditorium()
-    d = auditorium.deconstruct_auditorium()
+    auditorium_chairs = auditorium.generate_chairs(chair_pts)
+    
+    
+    print(auditorium_height)
