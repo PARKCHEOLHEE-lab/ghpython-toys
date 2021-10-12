@@ -51,6 +51,7 @@ class Surface:
         
 class Auditorium:
     def __init__(self, step_height, step_width, cutter_pts):
+        self.SCALE = 100
         self.START_X = 110
         self.END_X = 270
         self.STEP_COUNT = 10
@@ -151,10 +152,25 @@ class Auditorium:
         rs.MoveObjects(section_lines, self.SECTION_M)
         return section_lines
         
-    def calculate_height(self):
-        return rs.Distance(self.base_pts[-3], self.base_pts[-4])
+    def calculate_ceil_height(self):
+        ceil_height = rs.Distance(self.base_pts[-3], self.base_pts[-4]) * self.SCALE
+        if ceil_height < 2300:
+            return 0
+        else:
+            return ceil_height
+        
+    def calculate_step_width(self):
+        margin_space = (self.step_width - self.CHAIR_Y) * self.SCALE
+        if margin_space < 350:
+            return 0
+        else:
+            return margin_space
         
     def calcuate_cvalue(self):
+        curr_ceil_height = self.calculate_ceil_height()
+        curr_step_width = self.calculate_step_width()
+        print(curr_ceil_height)
+        print(curr_step_width)
         section_lines = self.generate_section()[-1]
         base_line = self.elements_auditorium(section_lines)[1][25]
         focus = rs.CurveMidPoint(base_line)
@@ -163,8 +179,9 @@ class Auditorium:
 
 if __name__ == "__main__":
     auditorium = Auditorium(step_height, step_width, cutter_pts)
-    auditorium_height = auditorium.calculate_height()
+#    auditorium_height = auditorium.calculate_ceil_height()
     auditorium_brep = auditorium.generate_auditorium()
     auditorium_chairs = auditorium.generate_chairs(chair_pts)
     auditorium_section = auditorium.generate_section()
     auditorium_focus = auditorium.calcuate_cvalue()
+    
