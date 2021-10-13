@@ -158,7 +158,7 @@ class Auditorium:
         sitting_lines = self.elements_auditorium(section_lines)[1]
         base_line = self.elements_auditorium(section_lines)[1][24]
         sight_points = gh.CurveMiddle([sitting_lines[37], sitting_lines[39]]);\
-                       rs.MoveObjects(sight_points, [0,0,self.SIGHT_LEVEL])
+                       rs.MoveObjects(sight_points, [0,0,self.SIGHT_LEVEL]);
         focus_point = rs.CurvePoints(base_line)[0]
         
         sight_curve = Curve([sight_points[0], focus_point, sight_points[1]]).generate_curve()
@@ -207,13 +207,35 @@ class Auditorium:
         circle_scaled = rs.coercegeometry(rs.CopyObject(circle, [130,0,0]))
         circle_origin = rs.coerce3dpoint(gh.Area(rs.coercegeometry(circle_scaled))[1])
         circle_scaled = gh.Scale(circle_scaled, circle_origin, 2)[0]
-        return circle, circle_scaled
         
+        circle_pts = gh.DivideCurve(circle, 4, False)[0]
+        circle_scaled_pts = gh.DivideCurve(circle_scaled, 4, False)[0]
+        connect_line_1 = Curve([circle_pts[0], circle_scaled_pts[0]]).generate_curve()
+        connect_line_2 = Curve([circle_pts[2], circle_scaled_pts[2]]).generate_curve()
+        return circle, circle_scaled, connect_line_1, connect_line_2
         
-    def visualization_calculate(self):
+    def visualization_zoom(self):
+        circle_list = self.visualization_circle()
+        scaled_origin = rs.coerce3dpoint(gh.Area(rs.coercegeometry(circle_list[1]))[1])
         merge_curve = gh.Merge(gh.DeconstructBrep(self.generate_section())[1], self.generate_sight()[0])
+        merge_curve[-1] = rs.coercecurve(merge_curve[-1])
         
-        return merge_curve
+        trimed_region = circle_list[0]
+        trimed_curves = gh.TrimwithRegion(merge_curve, trimed_region, rg.Plane.WorldZX)[0];\
+                        rs.MoveObjects(trimed_curves, [130,0,0])
+        trimed_curves = gh.Scale(trimed_curves, scaled_origin, 2)[0]
+        sight_curve = rs.coercecurve(self.generate_sight()[0]);\
+                      rs.MoveObject(sight_curve, [130,0,0])
+        sight_curve = gh.Scale(sight_curve, scaled_origin, 2)[0]
+        sight_points = gh.EndPoints(sight_curve)
+        cal_vect = Point(0,0,1).generate_point()
+        cal_line = gh.LineSDL(sight_points[0], cal_vect, 30)
+        cvalue_point = gh.CurveXCurve(sight_curve, cal_line)[0]
+        cvalue_line = Curve([cvalue_point[0], cvalue_point[1]]).generate_curve()
+        
+        trimed_curves.extend([cvalue_line, cvalue_point[0], cvalue_point[1], sight_points[1]])
+        
+        return trimed_curves
         
     def visualization_text(self):
         text = "Current Condition ▼\nC-Value: {} \nCeiling Height: {} \nStep Height: {} \nStep Width: {} \nStep Margin: {}"\
@@ -234,3 +256,4 @@ if __name__ == "__main__":
     auditorium_cvalue = auditorium.calculate_cvalue()
     section_circle = auditorium.visualization_circle()
     section_text = auditorium.visualization_text()
+    section_zoom = auditorium.visualization_zoom()
