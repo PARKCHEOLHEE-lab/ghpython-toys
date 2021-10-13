@@ -50,7 +50,7 @@ class Surface:
         
         
 class Auditorium:
-    def __init__(self, step_height, step_width, cutter_pts):
+    def __init__(self, step_height, step_width, cutter_pts, limit_height, limit_margin):
         self.SCALE = 100
         self.START_X = 110
         self.END_X = 270
@@ -64,10 +64,12 @@ class Auditorium:
         self.SECTION_M = [200, 0, 0]
         self.DIRECTION_A = self.auditorium_direction()
         self.DIRECTION_C = self.chair_direction()
+        self.CUTTER_PTS = cutter_pts
+        self.LIMIT_HEIGHT = limit_height
+        self.LIMIT_MARGIN = limit_margin
         
         self.step_width = step_width
         self.step_height = step_height
-        self.cutter_pts = cutter_pts
         self.base_pts = self.base_points()
         self.base_crvs = self.base_curves()
         self.auditorium = self.generate_auditorium()
@@ -136,7 +138,7 @@ class Auditorium:
         return self.chairs
         
     def generate_section(self):
-        cutter_crv = Curve(self.cutter_pts).generate_curve()
+        cutter_crv = Curve(self.CUTTER_PTS).generate_curve()
         cutter = Surface(cutter_crv).generate_surface()
         cutting_idx = [i for i in range(5, 95, 10)]
         section_lines = []
@@ -166,18 +168,16 @@ class Auditorium:
         
     def calculate_ceil_height(self):
         ceil_height = rs.Distance(self.base_pts[-3], self.base_pts[-4]) * self.SCALE
-        limit_height = 2100
         
-        if ceil_height < limit_height:
+        if ceil_height < self.LIMIT_HEIGHT * self.SCALE:
             return 0
         else:
             return ceil_height
         
     def calculate_step_margin(self):
         margin_space = (self.step_width - self.CHAIR_Y) * self.SCALE
-        limit_margin = 350
         
-        if margin_space < limit_margin:
+        if margin_space < self.LIMIT_MARGIN * self.SCALE:
             return 0
         else:
             return margin_space
@@ -247,7 +247,7 @@ class Auditorium:
         return text
         
 if __name__ == "__main__":
-    auditorium = Auditorium(step_height, step_width, cutter_pts)
+    auditorium = Auditorium(step_height, step_width, cutter_pts, limit_height, limit_margin)
     auditorium_brep = auditorium.generate_auditorium()
     auditorium_chairs = auditorium.generate_chairs(chair_pts)
     auditorium_section = auditorium.generate_section()
