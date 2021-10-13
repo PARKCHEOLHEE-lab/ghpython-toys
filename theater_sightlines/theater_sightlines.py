@@ -60,7 +60,8 @@ class Auditorium:
         self.CHAIR_Y = 5
         self.CEIL_Z = 65
         self.CHAIRS = 11
-        self.SECTION_M = [230, 0, 0]
+        self.SIGHT_LEVEL = 11.5
+        self.SECTION_M = [200, 0, 0]
         self.DIRECTION_A = self.auditorium_direction()
         self.DIRECTION_C = self.chair_direction()
         
@@ -152,36 +153,84 @@ class Auditorium:
         rs.MoveObjects(section_lines, self.SECTION_M)
         return section_lines
         
+    def generate_sight(self):
+        section_lines = self.generate_section()[-1]
+        sitting_lines = self.elements_auditorium(section_lines)[1]
+        base_line = self.elements_auditorium(section_lines)[1][24]
+        sight_points = gh.CurveMiddle([sitting_lines[37], sitting_lines[39]]);\
+                       rs.MoveObjects(sight_points, [0,0,self.SIGHT_LEVEL])
+        focus_point = rs.CurvePoints(base_line)[0]
+        
+        sight_curve = Curve([sight_points[0], focus_point, sight_points[1]]).generate_curve()
+        return [sight_curve, sight_points[0], sight_points[1]]
+        
     def calculate_ceil_height(self):
         ceil_height = rs.Distance(self.base_pts[-3], self.base_pts[-4]) * self.SCALE
-        if ceil_height < 2300:
+        limit_height = 2100
+        
+        if ceil_height < limit_height:
             return 0
         else:
             return ceil_height
         
-    def calculate_step_width(self):
+    def calculate_step_margin(self):
         margin_space = (self.step_width - self.CHAIR_Y) * self.SCALE
-        if margin_space < 350:
+        limit_margin = 350
+        
+        if margin_space < limit_margin:
             return 0
         else:
             return margin_space
         
-    def calcuate_cvalue(self):
+    def calculate_cvalue(self):
         curr_ceil_height = self.calculate_ceil_height()
-        curr_step_width = self.calculate_step_width()
-        print(curr_ceil_height)
-        print(curr_step_width)
+        curr_step_width = self.calculate_step_margin()
+        
+        sight_elements = self.generate_sight()
+        cal_crv = sight_elements[0]
+        cal_pt_1 = sight_elements[1]
+        cal_vect = Point(0,0,1).generate_point()
+        cal_line = gh.LineSDL(cal_pt_1, cal_vect, 30)
+        cal_pt_2 = gh.CurveXLine(rs.coercecurve(cal_crv), cal_line)[0][1]
+        
+        if curr_ceil_height == 0 or curr_step_width == 0:
+            cvalue = 0
+        else:
+            cvalue = rs.Distance(cal_pt_1, cal_pt_2) * self.SCALE
+        return round(cvalue, 1)
+        
+    def visualization_circle(self):
         section_lines = self.generate_section()[-1]
-        base_line = self.elements_auditorium(section_lines)[1][25]
-        focus = rs.CurveMidPoint(base_line)
-        return focus
-
-
+        section_lines = self.elements_auditorium(section_lines)[1]
+        circle_base = gh.CurveMiddle(section_lines[24]); rs.MoveObject(circle_base, [100,0,0])
+        circle = gh.Circle(gh.PlaneOrigin(rg.Plane.WorldZX, circle_base), 25)
+        circle_scaled = rs.coercegeometry(rs.CopyObject(circle, [130,0,0]))
+        circle_origin = rs.coerce3dpoint(gh.Area(rs.coercegeometry(circle_scaled))[1])
+        circle_scaled = gh.Scale(circle_scaled, circle_origin, 2)[0]
+        return circle, circle_scaled
+        
+        
+    def visualization_calculate(self):
+        merge_curve = gh.Merge(gh.DeconstructBrep(self.generate_section())[1], self.generate_sight()[0])
+        
+        return merge_curve
+        
+    def visualization_text(self):
+        text = "Current Condition ▼\nC-Value: {} \nCeiling Height: {} \nStep Height: {} \nStep Width: {} \nStep Margin: {}"\
+               .format(self.calculate_cvalue(),
+                       self.calculate_ceil_height(),
+                       self.step_height * self.SCALE,
+                       self.step_width * self.SCALE,
+                       self.calculate_step_margin())
+        return text
+        
 if __name__ == "__main__":
     auditorium = Auditorium(step_height, step_width, cutter_pts)
-#    auditorium_height = auditorium.calculate_ceil_height()
     auditorium_brep = auditorium.generate_auditorium()
     auditorium_chairs = auditorium.generate_chairs(chair_pts)
     auditorium_section = auditorium.generate_section()
-    auditorium_focus = auditorium.calcuate_cvalue()
     
+    auditorium_focus = auditorium.generate_sight()
+    auditorium_cvalue = auditorium.calculate_cvalue()
+    section_circle = auditorium.visualization_circle()
+    section_text = auditorium.visualization_text()
