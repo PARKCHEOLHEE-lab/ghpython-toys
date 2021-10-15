@@ -28,6 +28,18 @@ class Circle(Point):
     def generate_circle(self):
         return rs.AddCircle(self.point, self.radius)
 
+class Region:
+    def __init__(self, crvs):
+        self.plane = rg.Plane.WorldXY
+        self.curves = self.evaluate_type(crvs)
+        
+    def evaluate_type(self, crvs):
+        for crv in crvs:
+            if type(crv) == type(rs.AddPoint(0,0,0)):
+                self.curves.append(rs.coercecurve(crv))
+            else:
+                self.curves.append(crv)
+
 
 class Surface:
     def __init__(self, polyline):
@@ -41,15 +53,16 @@ class Surface:
         srf_parameter = rs.SurfaceParameter(self.surface, position)
         crane_origin = rs.EvaluateSurface(self.surface, srf_parameter[0], srf_parameter[1])
         return crane_origin
+            
+    def area_surface(self):
+        return rs.SurfaceArea(self.surface)[0]
         
     def evaluate_type(self, surface):
         if type(surface) != type(rs.AddPoint(0,0,0)):
             return rs.MoveObject(surface, [0,0,0])
         else:
             return surface
-            
-    def area_surface(self):
-        return rs.SurfaceArea(self.surface)[0]
+
 
 
 
@@ -63,3 +76,4 @@ if __name__ == "__main__":
     
     crane_tower_1 = Circle(crane_origin_1, crane_size_1).generate_circle()
     crane_tower_2 = Circle(crane_origin_2, crane_size_2).generate_circle()
+    
