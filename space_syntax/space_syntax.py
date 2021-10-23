@@ -78,10 +78,16 @@ class Space:
         centroids = self.generate_centroid()
         inside_check = gh.PointInBrep(brep, centroids, False)
         inside_grid = []
+        inside_centroid = []
         for i, check in enumerate(inside_check):
             if check == True:
                 inside_grid.append(self.grid[i])
-        return inside_grid
+                inside_centroid.append(centroids[i])
+        return inside_grid, inside_centroid
+        
+    def generate_grid_surface(self):
+        inside_grid = [rs.coercecurve(unit) for unit in self.generate_inside_grid()[0]]
+        return gh.BoundarySurfaces(inside_grid)
         
 #    def generate_inside_grid(self):
 #        rays = self.generate_ray()
@@ -92,13 +98,31 @@ class Space:
 #                if len(intersect) % 2 != 0:
 #                    inside_grid.append(self.grid[i])
 #        return inside_grid
+        
+    def generate_vispolygon(self):
+        inside_centroid = self.generate_inside_grid()[1]
+        point_count = 100
+        radius = 100
+        vispolygons = []
+        for centroid in inside_centroid:
+            isovist = gh.IsoVist(centroid, point_count, radius, self.curves)[0]
+            vispolygons.append(gh.PolyLine(isovist, True))
+        return vispolygons
+        
+    def perimeter_vispolygon(self):
+        vispolygons = self.generate_vispolygon()
+        perimeters = []
+        for vispolygon in vispolygons:
+            perimeters.append(rs.CurveLength(vispolygon))
+        return perimeters
+        
+        
 
 
 if __name__ == "__main__":
     space_obj = Space(space, resolution)
-    bbox_grid = space_obj.generate_grid()
-    bbox_cent = space_obj.generate_centroid()
-#    a = space_obj.generate_inside_grid()
-    space_ray = space_obj.generate_ray()
-#    space_grid = space_obj.generate_inside_grid()
-    a = space_obj.generate_inside_grid()
+    
+    all_perimeter = space_obj.perimeter_vispolygon()
+    min_perimeter = min(space_obj.perimeter_vispolygon())
+    max_perimeter = max(space_obj.perimeter_vispolygon())
+    grid_surface = space_obj.generate_grid_surface()
