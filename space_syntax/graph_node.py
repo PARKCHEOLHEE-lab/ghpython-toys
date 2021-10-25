@@ -59,13 +59,13 @@ class Graph:
 
 if __name__ == "__main__":
     convert_data = Data(datas).preprocessing()
-    node_data = []
+    node_list = []
     for i, conn in enumerate(convert_data):
         curr_node = Node(i)
         curr_node.connect_node(conn)
-        node_data.append(curr_node)
+        node_list.append(curr_node)
         
-    graph = Graph(node_data, origin)
+    graph = Graph(node_list, origin)
     nodes = graph.visualization_nodes()
     circles = graph.visualization_circles()
     connections = graph.visualization_connections()
