@@ -5,6 +5,7 @@ import Rhino.RhinoDoc as rc
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 
+
 class Data:
     def __init__(self, datas):
         self.datas = datas
@@ -23,15 +24,41 @@ class Node:
         self.node = node
         self.connection = []
         
-    def add_node(self, other_node):
+    def connect_node(self, other_node):
         self.connection.extend(other_node)
 
 
+class Graph:
+    def __init__(self, nodes, origin):
+        self.nodes = nodes
+        self.origin = origin
+        
+    def generate_polygon(self):
+        size = 10
+        segments = len(self.nodes)
+        fillet = 0
+        return gh.Polygon(rs.coerce3dpoint(self.origin), size, segments, fillet)[0]
+        
+    def generate_node_points(self):
+        return gh.DeconstructBrep(self.generate_polygon())[2]
+        
+    def visualization(self):
+        pass
+
+
+
 if __name__ == "__main__":
-    space_syntax = Data(datas).preprocessing()
+    convert_data = Data(datas).preprocessing()
     
     nodes = []
-    for i, conn in enumerate(space_syntax):
+    for i, conn in enumerate(convert_data):
         curr_node = Node(i)
-        curr_node.add_node(conn)
+        curr_node.connect_node(conn)
         nodes.append(curr_node)
+        
+    points = Graph(nodes, origin).generate_node_points()
+    lines = []
+    for i, node in enumerate(nodes):
+        for c in node.connection:
+            line = rs.AddLine(points[i], points[c])
+            lines.append(line)
