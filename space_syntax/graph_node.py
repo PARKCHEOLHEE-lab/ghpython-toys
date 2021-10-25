@@ -39,26 +39,33 @@ class Graph:
         fillet = 0
         return gh.Polygon(rs.coerce3dpoint(self.origin), size, segments, fillet)[0]
         
-    def generate_node_points(self):
+    def visualization_nodes(self):
         return gh.DeconstructBrep(self.generate_polygon())[2]
         
-    def visualization(self):
-        pass
-
+    def visualization_circles(self):
+        radius = 1
+        nodes_points = self.visualization_nodes()
+        return gh.Circle(nodes_points, radius)
+        
+    def visualization_connections(self):
+        nodes_vis = self.visualization_nodes()
+        lines = []
+        for i, node in enumerate(self.nodes):
+            for c in node.connection:
+                line = rs.AddLine(nodes_vis[i], nodes_vis[c])
+                lines.append(line)
+        return lines
 
 
 if __name__ == "__main__":
     convert_data = Data(datas).preprocessing()
-    
-    nodes = []
+    node_data = []
     for i, conn in enumerate(convert_data):
         curr_node = Node(i)
         curr_node.connect_node(conn)
-        nodes.append(curr_node)
+        node_data.append(curr_node)
         
-    points = Graph(nodes, origin).generate_node_points()
-    lines = []
-    for i, node in enumerate(nodes):
-        for c in node.connection:
-            line = rs.AddLine(points[i], points[c])
-            lines.append(line)
+    graph = Graph(node_data, origin)
+    nodes = graph.visualization_nodes()
+    circles = graph.visualization_circles()
+    connections = graph.visualization_connections()
