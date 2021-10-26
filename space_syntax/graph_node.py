@@ -24,17 +24,52 @@ class Node:
         self.node = node
         self.connection = []
         
+    def get_connection(self):
+        return self.connection
+        
+    def get_depth(self):
+        return self.depth
+        
     def connect_node(self, other_node):
         self.connection.extend(other_node)
-
+        
+    def add_depth(self, depth):
+        self.depth = depth
 
 class Graph:
     def __init__(self, nodes, origin):
         self.nodes = nodes
         self.origin = origin
         
+    def calculate_depth(self):
+        start_node = 0
+        graph_length = len(self.nodes)
+        level = [None] * graph_length
+        marked = [False] * graph_length
+        
+        level[start_node] = 0
+        marked[start_node] = True
+        queue = [start_node]
+        
+        while len(queue) != 0:
+            curr_node = queue.pop(0)
+            curr_conn = self.nodes[curr_node].get_connection()
+            
+            for i in range(len(curr_conn)):
+                b = curr_conn[i]
+                
+                if marked[b] == False:
+                    queue.append(b)
+                    level[b] = level[curr_node] + 1
+                    marked[b] = True
+        level_text = ""
+        for i, depth in enumerate(level):
+            level_text = level_text + "space: {} => depth: {}\n".format(i, depth)
+            
+        return level_text
+        
     def generate_polygon(self):
-        size = 10
+        size = 20
         segments = len(self.nodes)
         fillet = 0
         return gh.Polygon(rs.coerce3dpoint(self.origin), size, segments, fillet)[0]
@@ -43,16 +78,16 @@ class Graph:
         return gh.DeconstructBrep(self.generate_polygon())[2]
         
     def visualization_circles(self):
-        radius = 1
+        radius = 2
         nodes_points = self.visualization_nodes()
         return gh.Circle(nodes_points, radius)
         
     def visualization_connections(self):
-        nodes_vis = self.visualization_nodes()
+        nodes_points = self.visualization_nodes()
         lines = []
         for i, node in enumerate(self.nodes):
-            for c in node.connection:
-                line = rs.AddLine(nodes_vis[i], nodes_vis[c])
+            for c in node.get_connection():
+                line = rs.AddLine(nodes_points[i], nodes_points[c])
                 lines.append(line)
         return lines
 
@@ -69,3 +104,4 @@ if __name__ == "__main__":
     nodes = graph.visualization_nodes()
     circles = graph.visualization_circles()
     connections = graph.visualization_connections()
+    depth = graph.calculate_depth()
