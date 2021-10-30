@@ -81,6 +81,7 @@ class Tour:
             tour_distance = 0
             for i in range(0, self.tour_size()):
                 from_city = self.get_city(i)
+
                 if i+1 < self.tour_size():
                     destination_city = self.get_city(i+1)
                 
@@ -94,6 +95,7 @@ class Tour:
     def get_fitness(self):
         if self.fitness == 0:
             self.fitness = 1 / float(self.get_distance())
+        return self.fitness
         
     def tour_size(self):
         return len(self.tour)
@@ -111,14 +113,22 @@ class Tour:
 if __name__ == "__main__":
     random.seed(999)
     
-    manager = Manager()
+    cities_circles = []
+    cities = []
+    for x,y,z in coordinates:
+        cities_circles.append(rs.AddCircle([x,y,z], 2))
+        cities.append(City(x,y))
     
-    n_cities = 5
-    for i in range(n_cities):
-        x = random.randint(200, 800)
-        y = random.randint(200, 800)
-        
-        manager.add_city(City(x, y))
-        
-    tour = Tour(manager)
-    print(tour)
+    manager = Manager()
+    tour = Tour(manager, cities)
+    
+    test_1 = tour.get_distance()
+    test_2 = 0
+    for i in range(len(tour)):
+        if i == len(tour)-1:
+            test_2 += tour[i].distance_to(tour[0])
+        else:
+            test_2 += tour[i].distance_to(tour[i+1])
+            
+    print(test_1)
+    print(test_2)
