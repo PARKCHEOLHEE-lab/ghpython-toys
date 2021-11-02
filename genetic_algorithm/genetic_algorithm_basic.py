@@ -27,13 +27,15 @@ if __name__ == "__main__":
     GENE_COUNT = 10
     GENOME_COUNT = 5
     MUTATION_RATE = 0.01
+    GENERATION_LIMIT = 1000
     
-    chromosome = [[random.randint(0, 9) for _ in range(GENE_COUNT)] for _ in range(GENOME_COUNT)]
-    copied_chromosome = copy.deepcopy(chromosome)
     generation = 1
     done = False
 
-    while generation < 1000:
+    while generation < GENERATION_LIMIT:
+        if generation == 1:
+            chromosome = [[random.randint(0, 9) for _ in range(GENE_COUNT)] for _ in range(GENOME_COUNT)]
+            copied_chromosome = copy.deepcopy(chromosome)
         
         evaluation_value = evaluation(chromosome)
 
@@ -60,13 +62,15 @@ if __name__ == "__main__":
                 break
 
         if done == True:
-            print("done!!!")
+            print()
+            print("###### done ######")
+            print("dominant genome:")
             break
 
         
         print("\n")
         print("generation:", generation)
-        print("chromos:", chromosome)
+        print("chromosome:", chromosome)
         print("evaluation value:", evaluation_value)
         print("selected parents:", best_parents_indices)
 
