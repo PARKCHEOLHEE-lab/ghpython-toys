@@ -3,6 +3,7 @@ import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 import json
 
+
 class Data:
     def __init__(self, file_path):
         self.file_path = file_path
@@ -24,34 +25,32 @@ class Data:
             data_geometries.append(d)
             
         return data_geometries
-        
-        
-class Generator:
-    pass
-        
 
+
+class Generator(Data):
+    def __init__(self, path):
+        Data.__init__(self, path)
+        self.coordinates = self.read_geometry()
+        
+    def generate_polylines(self):
+        polylines = []
+        for coordinates in self.coordinates:
+            points = []
+            
+            for c in coordinates:
+                x, y, z = c[0], c[1], 0
+                point = rs.AddPoint(x, y, z)
+                points.append(point)
+            
+            polyline = rs.AddPolyline(points)
+            polylines.append(polyline)
+            
+        return polylines
 
 
 
 if __name__ == "__main__":
-    data_obj = Data(file)
-    data = data_obj.read_data()['features']
+    data_object = Generator(file_path)
     
-    test = data_obj.read_geometry()
-    pts = []
-    count = 0
-    for coordinates in test:
-        print(coordinates)
-        for c in coordinates:
-            print(c)
-        
-        if count > 1:
-            break
-        
-        count += 1
-#        pt = rs.AddPoint(t[0], t[1], 0)
-#        pts.append(pt)
-#    
-#    
-#    
-#    a = rs.AddPolyline(pts)
+    polylines = data_object.generate_polylines()
+    
