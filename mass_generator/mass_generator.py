@@ -1,7 +1,7 @@
 ﻿import Rhino.Geometry as rg
 import rhinoscriptsyntax as rs
+from collections import Counter
 import json
-import time
 
 
 class Data:
@@ -42,6 +42,16 @@ class Data:
             building_height = max(height_information, floor_information * floor_height)
             building_heights.append(building_height)
         return building_heights
+        
+    def preprocess_information(self, keyword):
+        postprocess = []
+        for data in self.read_information():
+            target_data = data[keyword]
+            if target_data is not None:
+                postprocess.append(int(target_data))
+            else:
+                postprocess.append(0)
+        return postprocess
 
 
 class Generator(Data):
@@ -63,6 +73,14 @@ class Generator(Data):
             polylines.append(polyline)
         return polylines
         
+    def generate_centroids(self):
+        polylines = self.generate_polylines()
+        centroids = []
+        for polyline in polylines:
+            centroid = rs.CurveAreaCentroid(polyline)[0]
+            centroids.append(centroid)
+        return centroids
+        
     def extrude_polylines(self):
         building_polylines = self.generate_polylines()
         building_heights = self.calculate_height()
@@ -83,20 +101,33 @@ class Generator(Data):
 
 if __name__ == "__main__":
     data_object = Generator(file_path)
-    print(data_object.read_information()[0])
-    print(data_object.read_information()[1])
-    
     buildings = data_object.extrude_polylines()
+    centroids = data_object.generate_centroids()
     
     heights = data_object.calculate_height()
     min_height = min(heights)
     max_height = max(heights)
     
-#    structure_code = []
-#    for data in data_object.read_information():
-#        strct_cd = data['STRCT_CD']
-#        if strct_cd is not None:
-#            structure_code.append(data['STRCT_CD'])
-#    
-#    print(sorted(list(set(structure_code))))
-#    print(set(structure_code))
+    regist_keyword = 'REGIST_DAY'
+    regist_codes = data_object.preprocess_information(regist_keyword)
+    min_regist_code = min(regist_codes)
+    max_regist_code = max(regist_codes)
+    
+    structure_keyword = 'STRCT_CD'
+    structure_codes = data_object.preprocess_information(structure_keyword)
+    min_structure = min(structure_codes)
+    max_structure = max(structure_codes)
+
+    usability_keyword = 'USABILITY'
+    usability_codes = data_object.preprocess_information(usability_keyword)
+    min_usability = min(usability_codes)
+    max_usability = max(usability_codes)
+    
+    scaled_usability = list(map(lambda x: int(100 * ((x-min_usability) / max_usability - min_usability)), usability_codes))
+    min_scaled_usability = min(scaled_usability)
+    max_scaled_usability = max(scaled_usability)
+    
+    heights_text = heights
+    regist_text = regist_codes
+    structure_text = structure_codes
+    usability_text = usability_codes
