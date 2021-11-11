@@ -2,19 +2,19 @@ import random
 import copy
 import numpy as np
 
-def evaluation(chromos):
-    evalution_value = [0 for _ in range(len(chromos))]
+def evaluation(chromosome):
+    evalution_value = [0 for _ in range(len(chromosome))]
     
     dominant_factor = 1
 
-    for i in range(len(chromos)):
+    for i in range(len(chromosome)):
         score = 0
 
-        for j in range(len(chromos[0])):
-            if chromos[i][j] > dominant_factor:
-                score += chromos[i][j] - dominant_factor
+        for j in range(len(chromosome[0])):
+            if chromosome[i][j] > dominant_factor:
+                score += chromosome[i][j] - dominant_factor
             else:
-                score += dominant_factor - chromos[i][j]
+                score += dominant_factor - chromosome[i][j]
 
         evalution_value[i] = score
     
@@ -34,10 +34,10 @@ if __name__ == "__main__":
 
     while generation < GENERATION_LIMIT:
         if generation == 1:
-            chromosome = [[random.randint(0, 9) for _ in range(GENE_COUNT)] for _ in range(GENOME_COUNT)]
-            copied_chromosome = copy.deepcopy(chromosome)
+            parent_chromosome = [[random.randint(0, 9) for _ in range(GENE_COUNT)] for _ in range(GENOME_COUNT)]
+            child_chromosome = copy.deepcopy(parent_chromosome)
         
-        evaluation_value = evaluation(chromosome)
+        evaluation_value = evaluation(parent_chromosome)
 
         best_parents_indices = []
         for i in range(2):
@@ -48,13 +48,13 @@ if __name__ == "__main__":
             for j in range(GENE_COUNT):
                 if random.random() < MUTATION_RATE:
                     mutation = random.randint(0, 9)
-                    copied_chromosome[i][j] = mutation
+                    child_chromosome[i][j] = mutation
                 else:
                     selected_parent = best_parents_indices[random.randint(0, 1)]
-                    crossover = chromosome[selected_parent][j]
-                    copied_chromosome[i][j] = crossover
+                    crossover = parent_chromosome[selected_parent][j]
+                    child_chromosome[i][j] = crossover
 
-        chromosome = copy.deepcopy(copied_chromosome)
+        parent_chromosome = copy.deepcopy(child_chromosome)
 
         for i in range(GENOME_COUNT):
             if evaluation_value[i] == 0:
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         
         print("\n")
         print("generation:", generation)
-        print("chromosome:", chromosome)
+        print("chromosome:", parent_chromosome)
         print("evaluation value:", evaluation_value)
         print("selected parents:", best_parents_indices)
 
