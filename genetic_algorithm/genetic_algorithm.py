@@ -51,7 +51,6 @@ class GeneticAlgorithm:
 
         # for i in range(GENOME_COUNT):
         #     if evaluation_values[i] == 0:
-        #         print("dominant genome: ")
         #         return True
 
     def best_parents(self, evaluation_values):
