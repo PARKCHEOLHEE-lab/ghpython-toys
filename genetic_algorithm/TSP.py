@@ -1,8 +1,9 @@
 import cv2
 import math
+import copy
 import random
 import numpy as np
-from numpy.lib.function_base import select
+from numpy.lib.function_base import diff
 
 
 class Genome:
@@ -64,25 +65,45 @@ class Chromosome:
 
 
 class GeneticAlgorithm:
-    def __init__(self, genome, generation_limit):
-        self.genome = genome
+    def __init__(self, generation_limit):
         self.generation_limit = generation_limit
 
-    def get_genome(self):
-        return self.genome
-
-    def evaluate_fittest(self):
+    def evaluate_fittest(self, genome):
         fitnesses = []
-        for chromosome in self.get_genome():
+        for chromosome in genome:
             fitness = chromosome.get_fitness()
             fitnesses.append(fitness)
 
         i = fitnesses.index(min(fitnesses))
-        fittest = self.genome[i]
+        fittest = genome[i]
         return fittest
 
-    def tournament_selection(self):
+    def tournament_selection(self, genome, count):
+        selected_genome = []
+        for _ in range(count):
+            i = random.randrange(len(genome))
+            selected_genome.append(genome[i])
+            
+        fittest = self.evaluate_fittest(selected_genome)
+        return fittest
+
+    def reproduction_genome(self, genome):
+        count = 10
+        parent_1 = self.tournament_selection(genome, count)
+        parent_2 = self.tournament_selection(genome, count)
+
+        while parent_1 == parent_2:
+            parent_2 = self.tournament_selection(genome, count)
+
+        parents = [parent_1, parent_2]
+        return parents
+
+    def crossover_genome(self, parents):
         return
+
+    def mutation_genome(self):
+        return
+
 
 
 if __name__ == "__main__":
@@ -90,7 +111,7 @@ if __name__ == "__main__":
     random.seed(777)
 
     CITIES_COUNT = 15
-    GENOME_SIZE = 2
+    GENOME_SIZE = 5
     GENERATION_LIMIT = 1000
 
     city_coordinates = []
@@ -102,5 +123,35 @@ if __name__ == "__main__":
     genome_object = Genome()
     chromosome_object = Chromosome(city_coordinates)
     genome = chromosome_object.configurate_chromosome(genome_size=GENOME_SIZE, chromosome_size=CITIES_COUNT)
+    
+    ga = GeneticAlgorithm(generation_limit=GENERATION_LIMIT)
 
-    ga = GeneticAlgorithm(genome=genome, generation_limit=GENERATION_LIMIT)
+    # parent_1, parent_2 = ga.reproduction_genome(genome)
+    # print(parent_1)
+    # print(parent_2)
+    
+    parent_1 = [0, 7, 14, 8, 6, 10, 9, 11, 12, 5, 13, 1, 3, 4, 2, 0]
+    parent_2 = [0, 5, 2, 11, 12, 4, 14, 3, 7, 10, 9, 1, 13, 6, 8, 0]
+    offspring = [0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0]
+
+    start = len(parent_1) // 3
+    end = len(parent_1) - 4
+
+    start = random.randrange(start, end)
+    
+    order_genes = parent_1[start:end]
+    offspring[start:end] = order_genes
+    
+    difference_genes = copy.deepcopy(parent_2)
+    for gene in order_genes:
+        i = difference_genes.index(gene)
+        difference_genes[i] = -1
+    
+    while -1 in difference_genes:
+        difference_genes.remove(-1)
+
+    print(difference_genes)
+
+    # while -1 in offspring:
+        
+        # break
