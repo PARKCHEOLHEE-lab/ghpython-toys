@@ -20,7 +20,7 @@ class GeneticAlgorithm:
             genome.append(chromosome)
         return genome    
 
-    def manipulation_chromosome(self, parent_chromosome, child_chromosome, best_parents_indices):
+    def reproduction_genome(self, parent_chromosome, child_chromosome, best_parents_indices):
         for i in range(self.GENOME_COUNT):
             for j in range(self.GENE_COUNT):
                 if random.random() < self.MUTATION_RATE:
@@ -32,7 +32,7 @@ class GeneticAlgorithm:
                     crossoverd_gene = parent_chromosome[selected_parent][j]
                     child_chromosome[i][j] = crossoverd_gene
 
-    def evaluate_chromosome(self, genome):
+    def evaluate_genome(self, genome):
         evaluation_values = [0] * len(genome)
         for i, chromosome in enumerate(genome):
             score = 0
@@ -41,8 +41,8 @@ class GeneticAlgorithm:
             evaluation_values[i] = score
         return evaluation_values
 
-    def copy_chromosome(self, chromosome):
-        return copy.deepcopy(chromosome)
+    def copy_genome(self, genome):
+        return copy.deepcopy(genome)
 
     def evaluate_dominant(self, evaluation_values):
         if evaluation_values.count(0) == CHROMOSOME_COUNT:
@@ -65,13 +65,13 @@ class GeneticAlgorithm:
         while generation < self.GENERATION_LIMIT:
             if generation == 1:
                 parent_genome = self.generate_genome()
-                child_genome = self.copy_chromosome(parent_genome)
+                child_genome = self.copy_genome(parent_genome)
 
-            evaluation_values = self.evaluate_chromosome(parent_genome)
+            evaluation_values = self.evaluate_genome(parent_genome)
             best_parents_indices = self.best_parents(evaluation_values)
 
-            self.manipulation_chromosome(parent_genome, child_genome, best_parents_indices)
-            parent_genome = self.copy_chromosome(child_genome)
+            self.reproduction_genome(parent_genome, child_genome, best_parents_indices)
+            parent_genome = self.copy_genome(child_genome)
 
             if self.evaluate_dominant(evaluation_values):
                 break
