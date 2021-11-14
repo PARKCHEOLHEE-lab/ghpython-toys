@@ -1,7 +1,6 @@
 import random
 import copy
 import numpy as np
-from numpy.lib.function_base import select
 
 class GeneticAlgorithm:
     def __init__(self, gene_count, chromosome_count, mutation_rate, dominant_factor, generation_limit=1000):
