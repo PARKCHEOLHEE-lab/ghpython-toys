@@ -82,7 +82,7 @@ class PathFinder:
     def main(self):
         STRAIGHT_SEG_COUNT = 11
         PROJECTION_SEG_COUNT = 60
-        MARGIN = 15
+        MARGIN = 20
         RADIUS = 3
         
         min_x, max_x = self.limit_point()
@@ -124,8 +124,10 @@ class PathFinder:
         fitness = self.evaluate_fitness(degree_of_slope, length_of_path)
         average_degree = self.calculate_average(degree_of_slope)
         min_degree, max_degree = self.calculate_min_max(degree_of_slope)
+        annotation = "fitness: {}\naverage degree: {}\nmax degree: {}\nlength of path: {}" \
+                     .format(fitness, average_degree, max_degree, length_of_path)
         
-        return path, fitness, degree_of_slope, average_degree, min_degree, max_degree, length_of_path
+        return path, fitness, degree_of_slope, average_degree, min_degree, max_degree, length_of_path, annotation
         
 if __name__ == "__main__":
     utils = Utils()
@@ -135,4 +137,4 @@ if __name__ == "__main__":
     
     pf = PathFinder(mountain, start_point, end_point, gene)
     
-    path, fitness, degree_of_slope, average_degree, min_degree, max_degree, length_of_path = pf.main()
+    path, fitness, degree_of_slope, average_degree, min_degree, max_degree, length_of_path, annotation = pf.main()
