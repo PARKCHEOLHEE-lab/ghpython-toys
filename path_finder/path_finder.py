@@ -1,7 +1,4 @@
-﻿import math
-import Rhino.Geometry as rg
-import rhinoscriptsyntax as rs
-import ghpythonlib.components as gh
+﻿import rhinoscriptsyntax as rs
 
 
 class Utils:
@@ -26,6 +23,9 @@ class Utils:
     def move_object(self, object, translation):
         return rs.MoveObject(object, translation)
         
+    def curve_pipe(self, curve, rad):
+        return rs.AddPipe(curve, 0, rad)
+
 
 class PathFinder:
     def __init__(self, mountain, start_point, end_point, gene):
@@ -51,9 +51,12 @@ class PathFinder:
     def calculate_slope(self, pt_1, pt_2):
         x1, y1, z1 = pt_1
         x2, y2, z2 = pt_2
-        distance = math.sqrt((x2-x1)**2 + (y2-y1)**2)
-        slope_degree = (z2-z1)/distance * 100
+        distance = ((x2-x1)**2 + (y2-y1)**2) ** 0.5
+        slope_degree = abs((z2-z1)/distance * 100)
         return slope_degree
+        
+    def calculate_min_max(self, degree_of_slope):
+        return min(degree_of_slope), max(degree_of_slope)
         
     def calculate_average(self, degree_of_slope):
         return sum(degree_of_slope) / len(degree_of_slope)
@@ -73,12 +76,14 @@ class PathFinder:
         
     def evaluate_fitness(self, degree_of_slope, length_of_path):
         average_degree = self.calculate_average(degree_of_slope)
-        return average_degree * length_of_path
+        _, max_degree = self.calculate_min_max(degree_of_slope)
+        return average_degree * max_degree * length_of_path
         
     def main(self):
         STRAIGHT_SEG_COUNT = 11
         PROJECTION_SEG_COUNT = 60
         MARGIN = 15
+        RADIUS = 3
         
         min_x, max_x = self.limit_point()
         
@@ -99,31 +104,35 @@ class PathFinder:
         projection_curve = self.utils.projection_curve(interpolate_curve, self.get_mountain())
         
         divide_projection = self.utils.divide_curve(projection_curve, PROJECTION_SEG_COUNT)
-        divide_projection_lines = []
-        degree_of_slope = []
         length_of_path = 0
+        degree_of_slope = []
+        path = []
         for i in range(1, len(divide_projection)):
             pt_1 = divide_projection[i-1]
             pt_2 = divide_projection[i]
             
             line = self.utils.generate_line(pt_1, pt_2)
-            divide_projection_lines.append(line)
+            pipe = self.utils.curve_pipe(line, RADIUS)[0]
+            path.append(pipe)
             
             line_length = self.utils.length_curve(line)
             length_of_path += line_length
             
-            degree = abs(self.calculate_slope(pt_1, pt_2))
+            degree = self.calculate_slope(pt_1, pt_2)
             degree_of_slope.append(degree)
             
         fitness = self.evaluate_fitness(degree_of_slope, length_of_path)
         average_degree = self.calculate_average(degree_of_slope)
-        return divide_projection_lines, fitness, average_degree, length_of_path
+        min_degree, max_degree = self.calculate_min_max(degree_of_slope)
+        
+        return path, fitness, degree_of_slope, average_degree, min_degree, max_degree, length_of_path
         
 if __name__ == "__main__":
     utils = Utils()
     
-    translation = [0,0,0]                                        # convert surface to guid
-    mountain = utils.move_object(mountain, translation)          # convert surface to guid
+    translation = [0,0,0]                                                   # convert surface to guid
+    mountain = utils.move_object(mountain, translation)                     # convert surface to guid
+    
     pf = PathFinder(mountain, start_point, end_point, gene)
     
-    path, fitness, average_degree, length_of_path = pf.main()
+    path, fitness, degree_of_slope, average_degree, min_degree, max_degree, length_of_path = pf.main()
