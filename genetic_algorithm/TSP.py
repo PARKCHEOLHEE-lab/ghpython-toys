@@ -3,7 +3,6 @@ import math
 import copy
 import random
 import numpy as np
-from numpy.lib.function_base import average
 
 
 class Genome:
@@ -99,9 +98,6 @@ class GeneticAlgorithm:
         return fittest
 
     def reproduction_genome(self, genome):
-        
-        # parent_1 = self.tournament_selection(genome, random.randint(0, 10))
-        # parent_2 = self.tournament_selection(genome, random.randint(0, 10))
         parent_1 = self.tournament_selection(genome, 20)
         parent_2 = self.tournament_selection(genome, 20)
 
@@ -139,13 +135,18 @@ class GeneticAlgorithm:
             i = offspring.index(blank)
             offspring[i] = gene
 
-        if random.randrange(0,100) < self.mutation_rate:
+        if random.randrange(0, 100) < self.mutation_rate:
             offspring = self.mutation_genome(offspring)
 
         offspring_genom = Genome()
         chromosome_object = Chromosome(self.city_coordinates)
         offspring_genom.set_chromosome(offspring)
         offspring_genom.set_fitness(chromosome_object.evaluate_chromosome(offspring_genom))
+        # print('order_genes :', order_genes)
+        # print('parent_1 :', parent_1)
+        # print('parent_2 :', parent_2)
+        # print('offspring_genom :', offspring_genom)
+        # print()
 
         return offspring_genom
 
@@ -165,11 +166,14 @@ class GeneticAlgorithm:
         RED = (0,0,255)
         BLUE = (255,0,0)
         title = 'TSP'
-        text = 'Press any button to get started'
+        # text = 'Press any button to get started'
 
         travel_map = cv2.imread(self.map_path)
+        for coord in self.city_coordinates:
+            x, y = coord
+            cv2.circle(travel_map, center=(x, y), radius=3, color=RED, thickness=-1, lineType=cv2.LINE_AA)
 
-        cv2.putText(travel_map, org=(10, 35), text=text, fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=BLUE, thickness=1, lineType=cv2.LINE_AA)
+        # cv2.putText(travel_map, org=(10, 35), text=text, fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=BLUE, thickness=1, lineType=cv2.LINE_AA)
         cv2.imshow(title, travel_map)
         cv2.waitKey(0)
         chromosome_object = Chromosome(self.city_coordinates)
@@ -211,11 +215,11 @@ class GeneticAlgorithm:
                 cv2.line(travel_map, curr_point, next_point, BLUE, 1, cv2.LINE_AA)
 
             cv2.putText(travel_map, org=(10, 25), text=f'generation: {generation}', fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=0, thickness=1, lineType=cv2.LINE_AA)
-            cv2.putText(travel_map, org=(10, 45), text=f'distance: {distance}km', fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=BLUE, thickness=1, lineType=cv2.LINE_AA)
+            cv2.putText(travel_map, org=(10, 45), text=f'distance: {distance}', fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=BLUE, thickness=1, lineType=cv2.LINE_AA)
             cv2.putText(travel_map, org=(10, 65), text=f'best route: {best_genome}', fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4, color=0, thickness=1, lineType=cv2.LINE_AA)
 
             cv2.imshow(title, travel_map)
-            if cv2.waitKey(100) == ord('q'):
+            if cv2.waitKey(1) == ord('q'):
                 break
             
             travel_map = cv2.imread(self.map_path)
@@ -234,7 +238,13 @@ if __name__ == "__main__":
     POPULATION_SIZE = 100
     GENERATION_LIMIT = 2000
     MUTATION_RATE = 65
-    WEAKNESS_THRESHOLD = 1100
+    WEAKNESS_THRESHOLD = 1400
+    
+    # CITIES_COUNT = 20
+    # POPULATION_SIZE = 100
+    # GENERATION_LIMIT = 2000
+    # MUTATION_RATE = 65
+    # WEAKNESS_THRESHOLD = 1500
 
     map_path = 'america.jpg'
 
@@ -243,7 +253,7 @@ if __name__ == "__main__":
     for i in range(CITIES_COUNT):
         x = random.randint(100, 500)
         y = random.randint(200, 400)
-        city_coordinates.append([x,y])
+        city_coordinates.append([x, y])
 
     ga = GeneticAlgorithm(weakness_threshold=WEAKNESS_THRESHOLD,
                           generation_limit=GENERATION_LIMIT,
