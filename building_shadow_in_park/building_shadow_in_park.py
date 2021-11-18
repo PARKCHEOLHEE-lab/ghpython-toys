@@ -1,7 +1,4 @@
-﻿import math
-import random
-import Rhino.Geometry as rg
-import Rhino.RhinoDoc as rc
+﻿import Rhino.Geometry as rg
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 
@@ -142,7 +139,7 @@ class Tower(Rectangle):
             mesh_tower = rg.Mesh.CreateFromBrep(rs.coercebrep(tower), mesh_setting)
             tower_shadow.extend(gh.MeshShadow(mesh_tower, vector, rg.Plane.WorldXY))
         shadow = Region(tower_shadow).generate_union()
-        return shadow
+        return gh.BoundarySurfaces(shadow)
         
     def area_shadow(self, shadow):
         return gh.Area(shadow)[0]
@@ -151,15 +148,36 @@ class Tower(Rectangle):
         return self.size * self.size * sum(self.heights)
 
 
+class Genetic:
+    def __init__(self, gross_floor_area, shadow_park_intsc_area, shadow_mass_intsc_area):
+        self.gross_floor_area = gross_floor_area
+        self.shadow_park_intsc_area = shadow_park_intsc_area
+        self.shadow_mass_intsc_area = shadow_mass_intsc_area
+        
+    def evaluate_fitness(self, gross_floor_area_threshold, park_shadow_threshold, mass_shadow_threshold):
+        expression = (self.gross_floor_area * (self.shadow_park_intsc_area+1) * (self.shadow_mass_intsc_area+1))
+        fitness = -expression
+        
+        if self.gross_floor_area < gross_floor_area_threshold:
+            fitness = expression
+            
+        if self.shadow_park_intsc_area > park_shadow_threshold:
+            fitness = expression
+            
+        if self.shadow_mass_intsc_area > mass_shadow_threshold:
+            fitness = expression
+        
+        return fitness
+
 
 if __name__ == "__main__":
     TOWER_ORIGIN = [200, 0, 0]
     TOWER_SIZE = 23
     TOWER_COUNT = 3
-    PARK_ORIGIN = [200,100,0]
-    PARK_SIZE = 165
+    PARK_ORIGIN = [150,100,0]
+    PARK_SIZE = 160
     MASS_ORIGIN = [300,0,0]
-    MASS_SIZE = 69
+    MASS_SIZE = 70
     MASS_HEIGHT = 50
     SPHERE_RADIUS = 700
     SUN_POSITION = [sun_position_x, sun_position_y]
@@ -184,3 +202,13 @@ if __name__ == "__main__":
     shadow_park_intsc_area = Region([shadow, park]).area_intersection()
     shadow_mass_intsc_area = Region([shadow, mass_crv]).area_intersection()
     gross_floor_area = tower_obj.calculate_gfa()
+    
+    GROSS_FLOOR_AREA_THRESHOLD = 250000
+    PARK_SHADOW_THRESHOLD = 100
+    MASS_SHADOW_THRESHOLD = 1000
+    
+    genetic = Genetic(gross_floor_area, shadow_park_intsc_area, shadow_mass_intsc_area)
+    fitness = genetic.evaluate_fitness(GROSS_FLOOR_AREA_THRESHOLD, PARK_SHADOW_THRESHOLD, MASS_SHADOW_THRESHOLD)
+    
+    text = "Current Condition ▼\nFloor Area: {}\nShadow Area: {}\nPark Shadow: {}\nMass Shadow: {}\nGenome: {}"\
+           .format(gross_floor_area, shadow_area, shadow_park_intsc_area, shadow_mass_intsc_area, floor_count)
