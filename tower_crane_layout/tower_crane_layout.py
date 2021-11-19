@@ -129,15 +129,22 @@ if __name__ == "__main__":
     
     exception_score = 500000
     crane_housing_intsc_area =  Region([Region(crane_towers).union, housing_area]).intsc_area
-    if crane_housing_intsc_area >= 200:
+    threshold = 200
+    if crane_housing_intsc_area >= threshold:
         empty_site_area = exception_score
         
     for crane in crane_towers:
         origin_check = Region([crane, site]).origin_in_region()
         if origin_check == 0 or origin_check == 1:
             empty_site_area = exception_score
-
+    
+    total_crane_crane_intsc_area = 0
     for crane_combi in combinations(crane_towers, 2):
         crane_crane_intsc_area = Region(crane_combi).intsc_area
-        if crane_crane_intsc_area >= 1000:
-            empty_site_area = exception_score
+        total_crane_crane_intsc_area = total_crane_crane_intsc_area + crane_crane_intsc_area
+    if total_crane_crane_intsc_area >= 1000:
+        empty_site_area = exception_score
+            
+    
+    current_condition = "Current Condition ▼\nSite Area: {}\nSite Empty Area: {}\nHousing Intersection Area: {}\nCrane Intersection Area: {}"\
+                        .format(site_area, empty_site_area, crane_housing_intsc_area, total_crane_crane_intsc_area)
