@@ -1,6 +1,4 @@
-﻿import Rhino.Geometry as rg
-import rhinoscriptsyntax as rs
-from collections import Counter
+﻿import rhinoscriptsyntax as rs
 import json
 
 
