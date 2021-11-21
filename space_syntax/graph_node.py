@@ -41,6 +41,9 @@ class Graph:
         self.nodes = nodes
         self.origin = origin
         
+    def get_length(self):
+        return len(self.nodes)
+        
     def calculate_depth(self):
         start_node = 0
         graph_length = len(self.nodes)
@@ -62,6 +65,7 @@ class Graph:
                     queue.append(b)
                     level[b] = level[curr_node] + 1
                     marked[b] = True
+                    
         level_text = ""
         for i, depth in enumerate(level):
             level_text = level_text + "space: {} => depth: {}\n".format(i, depth)
@@ -70,12 +74,17 @@ class Graph:
         
     def generate_polygon(self):
         size = 20
-        segments = len(self.nodes)
+        segments = self.get_length()
+        if segments < 3:
+            segments = 3
         fillet = 0
         return gh.Polygon(rs.coerce3dpoint(self.origin), size, segments, fillet)[0]
         
     def visualization_nodes(self):
-        return gh.DeconstructBrep(self.generate_polygon())[2]
+        nodes_points = gh.DeconstructBrep(self.generate_polygon())[2]
+        if self.get_length() == 2:
+            nodes_points = nodes_points[:2]
+        return nodes_points 
         
     def visualization_circles(self):
         radius = 2
@@ -84,6 +93,7 @@ class Graph:
         
     def visualization_connections(self):
         nodes_points = self.visualization_nodes()
+        
         lines = []
         for i, node in enumerate(self.nodes):
             for c in node.get_connection():
