@@ -77,6 +77,11 @@ class Tower(Rectangle):
         rs.MoveObjects(target_points, translation)
         roof_frame = rs.AddCurve(frame_points, degree=1)
         return roof_frame
+        
+    def generate_surface(self):
+        srfs = []
+        
+        return srfs
 
 
 if __name__ == "__main__":
@@ -86,3 +91,37 @@ if __name__ == "__main__":
     
     tower_obj = Tower(ORIGIN, SIZE, SIZE, VERTICAL_HEIGHTS, rotation_angle)
     tower = tower_obj.rotate_frame()
+    
+    a = []
+    for i in range(len(tower)-1):
+        curr_points = rs.CurvePoints(tower[i])[:-1]
+        next_points = rs.CurvePoints(tower[i+1])[:-1]
+        
+        for j in range(len(curr_points)):
+            idx_1 = j
+            idx_2 = j+1
+            if idx_2 == 4:
+                idx_2 = 0
+                
+            if i % 2 == 0:
+                points_1 = [curr_points[idx_1], next_points[idx_1], next_points[idx_2]]
+                points_2 = [curr_points[idx_1], next_points[idx_2], curr_points[idx_2]]
+                
+                polyline_1 = gh.PolyLine(points_1, True)
+                polyline_2 = gh.PolyLine(points_2, True)
+                
+                surface_1 = gh.BoundarySurfaces(polyline_1)
+                surface_2 = gh.BoundarySurfaces(polyline_2)
+                
+                a.extend([surface_1, surface_2])
+                
+            else:
+                points_1 = [curr_points[idx_1], next_points[idx_1], curr_points[idx_2]]
+                points_2 = [curr_points[idx_2], next_points[idx_1], next_points[idx_2]]
+                
+                polyline_1 = gh.PolyLine(points_1, True)
+                polyline_2 = gh.PolyLine(points_2, True)
+
+                surface_1 = gh.BoundarySurfaces(polyline_1)
+                surface_2 = gh.BoundarySurfaces(polyline_2)
+                a.extend([surface_1, surface_2])
