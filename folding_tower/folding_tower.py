@@ -2,6 +2,7 @@
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 
+
 class Rectangle:
     def __init__(self, origin, width, height):
         self.origin = origin
@@ -24,19 +25,17 @@ class Rectangle:
         original_rectangle = self.generate_rectangle()
         return rs.CopyObject(original_rectangle, translation)
         
-    def rotate_rectangle(self):
-        return
-    
+    def rotate_rectangle(self, object, rotation_angle):
+        centroid = rs.CurveAreaCentroid(object)[0]
+        return rs.RotateObject(object, centroid, rotation_angle)
+
 
 class Tower(Rectangle):
-    def __init__(self, origin, width, height, vertical_heights):
-        self.recs = []
+    def __init__(self, origin, width, height, vertical_heights, rotation_angle):
         self.floor_height = 4
         self.vertical_heights = vertical_heights
+        self.rotation_angle = rotation_angle
         Rectangle.__init__(self, origin, width, height)
-        
-    def get_recs(self):
-        return self.recs
         
     def get_vertical_heights(self):
         return self.vertical_heights
@@ -44,21 +43,46 @@ class Tower(Rectangle):
     def get_floor_height(self):
         return self.floor_height
         
-    def heights_length(self):
-        return len(vertical_heights)
+    def get_rotation_angle(self):
+        return self.rotation_angle
+        
+    def frame_count(self):
+        return len(self.vertical_heights)
         
     def generate_frame(self):
-        for i in range(self.heights_length()):
+        recs = []
+        floor_height = self.get_floor_height()
+        for i in range(self.frame_count()):
             z = self.get_vertical_heights()[i]
-            copied_rectangle = self.copy_rectangle([0, 0, z*self.get_floor_height()])
-            self.recs.append(copied_rectangle)
-        return self.get_recs()
+            copied_rectangle = self.copy_rectangle([0, 0, z*floor_height])
+            recs.append(copied_rectangle)
+        return recs
+        
+    def rotate_frame(self):
+        frame = self.generate_frame()
+        rotation_angle = self.get_rotation_angle()
+        
+        for i in range(self.frame_count()):
+            self.rotate_rectangle(frame[i], rotation_angle[i])
+            
+        roof_frame = self.lean_roof(frame)
+        frame[-1] = roof_frame
+        return frame
+        
+    def lean_roof(self, frame):
+        frame_points = rs.CurvePoints(frame[-1])
+        
+        target_points = [frame_points[0], frame_points[3], frame_points[4]]
+        translation = [0,0,15]
+        rs.MoveObjects(target_points, translation)
+        roof_frame = rs.AddCurve(frame_points, degree=1)
+        return roof_frame
+
 
 if __name__ == "__main__":
+    VERTICAL_HEIGHTS = [0, 5, 16, 30, 40]
     ORIGIN = [200, 0, 0]
     SIZE = 32
     
-    tower_obj = Tower(ORIGIN, SIZE, SIZE, vertical_heights)
-    tower = tower_obj.generate_frame()
-    
-        
+    tower_obj = Tower(ORIGIN, SIZE, SIZE, VERTICAL_HEIGHTS, rotation_angle)
+    tower = tower_obj.rotate_frame()
