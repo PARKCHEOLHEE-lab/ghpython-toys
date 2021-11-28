@@ -18,6 +18,9 @@ class Rectangle:
     def get_height(self):
         return self.height
         
+    def get_points(self, frame):
+        return rs.CurvePoints(frame)
+        
     def generate_rectangle(self):
         return rs.AddRectangle(self.get_origin(), self.get_width(), self.get_height())
         
@@ -25,16 +28,16 @@ class Rectangle:
         original_rectangle = self.generate_rectangle()
         return rs.CopyObject(original_rectangle, translation)
         
-    def rotate_rectangle(self, object, rotation_angle):
+    def rotate_rectangle(self, object, frame_angle):
         centroid = rs.CurveAreaCentroid(object)[0]
-        return rs.RotateObject(object, centroid, rotation_angle)
+        return rs.RotateObject(object, centroid, frame_angle)
 
 
 class Tower(Rectangle):
-    def __init__(self, origin, width, height, vertical_heights, rotation_angle):
+    def __init__(self, origin, width, height, vertical_heights, frame_angle):
         self.floor_height = 4
         self.vertical_heights = vertical_heights
-        self.rotation_angle = rotation_angle
+        self.frame_angle = frame_angle
         Rectangle.__init__(self, origin, width, height)
         
     def get_vertical_heights(self):
@@ -43,8 +46,8 @@ class Tower(Rectangle):
     def get_floor_height(self):
         return self.floor_height
         
-    def get_rotation_angle(self):
-        return self.rotation_angle
+    def get_frame_angle(self):
+        return self.frame_angle
         
     def frame_count(self):
         return len(self.vertical_heights)
@@ -60,10 +63,10 @@ class Tower(Rectangle):
         
     def rotate_frame(self):
         frame = self.generate_frame()
-        rotation_angle = self.get_rotation_angle()
+        frame_angle = self.get_frame_angle()
         
         for i in range(self.frame_count()):
-            self.rotate_rectangle(frame[i], rotation_angle[i])
+            self.rotate_rectangle(frame[i], frame_angle[i])
             
         roof_frame = self.lean_roof(frame)
         frame[-1] = roof_frame
@@ -78,9 +81,80 @@ class Tower(Rectangle):
         roof_frame = rs.AddCurve(frame_points, degree=1)
         return roof_frame
         
+    def generate_core(self):
+        return
+        
+    def generate_structure(self):
+        crvs = []
+        frame = self.rotate_frame()
+        for i in range(len(frame)-1):
+            curr_points = self.get_points(frame[i])[:-1]
+            next_points = self.get_points(frame[i+1])[:-1]
+            
+            for j in range(len(curr_points)):
+                idx_1 = j
+                idx_2 = j+1
+                if idx_2 == 4:
+                    idx_2 = 0
+                    
+                if i % 2 == 0:
+                    points_1 = [curr_points[idx_1], next_points[idx_1], next_points[idx_2]]
+                    points_2 = [curr_points[idx_1], next_points[idx_2], curr_points[idx_2]]
+                    
+                    polyline_1 = gh.PolyLine(points_1, True)
+                    polyline_2 = gh.PolyLine(points_2, True)
+                    
+                    crvs.extend([polyline_1, polyline_2])
+                    
+                else:
+                    points_1 = [curr_points[idx_1], next_points[idx_1], curr_points[idx_2]]
+                    points_2 = [curr_points[idx_2], next_points[idx_1], next_points[idx_2]]
+                    
+                    polyline_1 = gh.PolyLine(points_1, True)
+                    polyline_2 = gh.PolyLine(points_2, True)
+                    
+                    polyline_1 = gh.PolyLine(points_1, True)
+                    polyline_2 = gh.PolyLine(points_2, True)
+                    
+                    crvs.extend([polyline_1, polyline_2])
+                    
+        return crvs
+        
     def generate_surface(self):
         srfs = []
-        
+        frame = self.rotate_frame()
+        for i in range(len(frame)-1):
+            curr_points = self.get_points(frame[i])[:-1]
+            next_points = self.get_points(frame[i+1])[:-1]
+            
+            for j in range(len(curr_points)):
+                idx_1 = j
+                idx_2 = j+1
+                if idx_2 == 4:
+                    idx_2 = 0
+                    
+                if i % 2 == 0:
+                    points_1 = [curr_points[idx_1], next_points[idx_1], next_points[idx_2]]
+                    points_2 = [curr_points[idx_1], next_points[idx_2], curr_points[idx_2]]
+                    
+                    polyline_1 = gh.PolyLine(points_1, True)
+                    polyline_2 = gh.PolyLine(points_2, True)
+                    
+                    surface_1 = gh.BoundarySurfaces(polyline_1)
+                    surface_2 = gh.BoundarySurfaces(polyline_2)
+                    srfs.extend([surface_1, surface_2])
+                    
+                else:
+                    points_1 = [curr_points[idx_1], next_points[idx_1], curr_points[idx_2]]
+                    points_2 = [curr_points[idx_2], next_points[idx_1], next_points[idx_2]]
+                    
+                    polyline_1 = gh.PolyLine(points_1, True)
+                    polyline_2 = gh.PolyLine(points_2, True)
+                    
+                    surface_1 = gh.BoundarySurfaces(polyline_1)
+                    surface_2 = gh.BoundarySurfaces(polyline_2)
+                    srfs.extend([surface_1, surface_2])
+                    
         return srfs
 
 
@@ -89,39 +163,7 @@ if __name__ == "__main__":
     ORIGIN = [200, 0, 0]
     SIZE = 32
     
-    tower_obj = Tower(ORIGIN, SIZE, SIZE, VERTICAL_HEIGHTS, rotation_angle)
-    tower = tower_obj.rotate_frame()
-    
-    a = []
-    for i in range(len(tower)-1):
-        curr_points = rs.CurvePoints(tower[i])[:-1]
-        next_points = rs.CurvePoints(tower[i+1])[:-1]
-        
-        for j in range(len(curr_points)):
-            idx_1 = j
-            idx_2 = j+1
-            if idx_2 == 4:
-                idx_2 = 0
-                
-            if i % 2 == 0:
-                points_1 = [curr_points[idx_1], next_points[idx_1], next_points[idx_2]]
-                points_2 = [curr_points[idx_1], next_points[idx_2], curr_points[idx_2]]
-                
-                polyline_1 = gh.PolyLine(points_1, True)
-                polyline_2 = gh.PolyLine(points_2, True)
-                
-                surface_1 = gh.BoundarySurfaces(polyline_1)
-                surface_2 = gh.BoundarySurfaces(polyline_2)
-                
-                a.extend([surface_1, surface_2])
-                
-            else:
-                points_1 = [curr_points[idx_1], next_points[idx_1], curr_points[idx_2]]
-                points_2 = [curr_points[idx_2], next_points[idx_1], next_points[idx_2]]
-                
-                polyline_1 = gh.PolyLine(points_1, True)
-                polyline_2 = gh.PolyLine(points_2, True)
-
-                surface_1 = gh.BoundarySurfaces(polyline_1)
-                surface_2 = gh.BoundarySurfaces(polyline_2)
-                a.extend([surface_1, surface_2])
+    tower_obj = Tower(ORIGIN, SIZE, SIZE, VERTICAL_HEIGHTS, frame_angle)
+    tower_frame = tower_obj.rotate_frame()
+    tower_struc = tower_obj.generate_structure()
+    tower = tower_obj.generate_surface()
