@@ -84,8 +84,8 @@ class Tower(Rectangle):
     def generate_core(self):
         return
         
-    def generate_structure(self):
-        crvs = []
+    def generate_main_structure(self):
+        main_structure = []
         frame = self.rotate_frame()
         for i in range(len(frame)-1):
             curr_points = self.get_points(frame[i])[:-1]
@@ -104,7 +104,7 @@ class Tower(Rectangle):
                     polyline_1 = gh.PolyLine(points_1, True)
                     polyline_2 = gh.PolyLine(points_2, True)
                     
-                    crvs.extend([polyline_1, polyline_2])
+                    main_structure.extend([polyline_1, polyline_2])
                     
                 else:
                     points_1 = [curr_points[idx_1], next_points[idx_1], curr_points[idx_2]]
@@ -113,48 +113,47 @@ class Tower(Rectangle):
                     polyline_1 = gh.PolyLine(points_1, True)
                     polyline_2 = gh.PolyLine(points_2, True)
                     
-                    polyline_1 = gh.PolyLine(points_1, True)
-                    polyline_2 = gh.PolyLine(points_2, True)
+                    main_structure.extend([polyline_1, polyline_2])
                     
-                    crvs.extend([polyline_1, polyline_2])
+        return main_structure
+        
+    def generate_sub_structure(self):
+        frame = self.rotate_frame()
+        lines = []
+        for i in range(len(frame)-1):
+            curr_points = self.get_points(frame[i])[:-1]
+            next_points = self.get_points(frame[i+1])[:-1]
+            
+            for j in range(len(curr_points)):
+                idx_1 = j
+                idx_2 = j+1
+                if idx_2 == 4:
+                    idx_2 = 0
+                
+                straight = rs.AddLine(curr_points[idx_1], next_points[idx_1])
+                lines.append(straight)
+                
+                if i % 2 == 0:
+                    start_point = curr_points[idx_1]
+                    end_point = next_points[idx_2]
+                    line = rs.AddLine(start_point, end_point)
+                    lines.append(line)
                     
-        return crvs
+                else:
+                    start_point = next_points[idx_1]
+                    end_point = curr_points[idx_2]
+                    line = rs.AddLine(start_point, end_point)
+                    lines.append(line)
+                    
+        return lines
         
     def generate_surface(self):
         srfs = []
-        frame = self.rotate_frame()
-        for i in range(len(frame)-1):
-            curr_points = self.get_points(frame[i])[:-1]
-            next_points = self.get_points(frame[i+1])[:-1]
-            
-            for j in range(len(curr_points)):
-                idx_1 = j
-                idx_2 = j+1
-                if idx_2 == 4:
-                    idx_2 = 0
-                    
-                if i % 2 == 0:
-                    points_1 = [curr_points[idx_1], next_points[idx_1], next_points[idx_2]]
-                    points_2 = [curr_points[idx_1], next_points[idx_2], curr_points[idx_2]]
-                    
-                    polyline_1 = gh.PolyLine(points_1, True)
-                    polyline_2 = gh.PolyLine(points_2, True)
-                    
-                    surface_1 = gh.BoundarySurfaces(polyline_1)
-                    surface_2 = gh.BoundarySurfaces(polyline_2)
-                    srfs.extend([surface_1, surface_2])
-                    
-                else:
-                    points_1 = [curr_points[idx_1], next_points[idx_1], curr_points[idx_2]]
-                    points_2 = [curr_points[idx_2], next_points[idx_1], next_points[idx_2]]
-                    
-                    polyline_1 = gh.PolyLine(points_1, True)
-                    polyline_2 = gh.PolyLine(points_2, True)
-                    
-                    surface_1 = gh.BoundarySurfaces(polyline_1)
-                    surface_2 = gh.BoundarySurfaces(polyline_2)
-                    srfs.extend([surface_1, surface_2])
-                    
+        main_structure = self.generate_main_structure()
+        for polyline in main_structure:
+            srf = gh.BoundarySurfaces(polyline)
+            srfs.append(srf)
+        
         return srfs
 
 
@@ -165,5 +164,6 @@ if __name__ == "__main__":
     
     tower_obj = Tower(ORIGIN, SIZE, SIZE, VERTICAL_HEIGHTS, frame_angle)
     tower_frame = tower_obj.rotate_frame()
-    tower_struc = tower_obj.generate_structure()
-    tower = tower_obj.generate_surface()
+    tower_struc = tower_obj.generate_main_structure()
+#    tower = tower_obj.generate_surface()
+    a = tower_obj.generate_sub_structure()
