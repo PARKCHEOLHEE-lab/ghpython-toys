@@ -29,8 +29,9 @@ class Rectangle:
         return rs.CopyObject(original_rectangle, translation)
         
     def rotate_rectangle(self, object, frame_angle):
-        centroid = rs.CurveAreaCentroid(object)[0]
-        return rs.RotateObject(object, centroid, frame_angle)
+        origin = rs.CurveAreaCentroid(object)[0]
+#        origin = self.get_points(object)[0]
+        return rs.RotateObject(object, origin, frame_angle)
 
 
 class Tower(Rectangle):
@@ -82,7 +83,14 @@ class Tower(Rectangle):
         return roof_frame
         
     def generate_core(self):
-        return
+        core_size = -10
+        base_curve = self.rotate_frame()[0]
+        core_curve = rs.OffsetCurve(base_curve, [0,0,0], core_size)
+        
+        core_z = 160
+        core_path = rs.AddLine(rs.AddPoint(0,0,0), rs.AddPoint(0,0,core_z))
+        core = rs.ExtrudeCurve(core_curve, core_path)
+        return core
         
     def generate_main_structure(self):
         main_structure = []
@@ -118,11 +126,12 @@ class Tower(Rectangle):
         return main_structure
         
     def generate_sub_structure(self):
-        frame = self.rotate_frame()
-        lines = []
-        for i in range(len(frame)-1):
-            curr_points = self.get_points(frame[i])[:-1]
-            next_points = self.get_points(frame[i+1])[:-1]
+        tower_frame = self.rotate_frame()
+        diagonal_columns = []
+        
+        for i in range(len(tower_frame)-1):
+            curr_points = self.get_points(tower_frame[i])[:-1]
+            next_points = self.get_points(tower_frame[i+1])[:-1]
             
             for j in range(len(curr_points)):
                 idx_1 = j
@@ -130,31 +139,70 @@ class Tower(Rectangle):
                 if idx_2 == 4:
                     idx_2 = 0
                 
-                straight = rs.AddLine(curr_points[idx_1], next_points[idx_1])
-#                lines.append(straight)
-                
                 if i % 2 == 0:
                     start_point = curr_points[idx_1]
                     end_point = next_points[idx_2]
-                    line = rs.AddLine(start_point, end_point)
-                    lines.append(line)
+                    diagonal = rs.AddLine(start_point, end_point)
+                    diagonal_columns.append(diagonal)
                     
                 else:
                     start_point = next_points[idx_1]
                     end_point = curr_points[idx_2]
-                    line = rs.AddLine(start_point, end_point)
-                    lines.append(line)
+                    diagonal = rs.AddLine(start_point, end_point)
+                    diagonal_columns.append(diagonal)
                     
-        return lines
+        segment = 5
+        frame_points = []
+        for frame in tower_frame:
+            temp_list = []
+            exploded_frame = rs.ExplodeCurves(frame)
+            
+            for curve in exploded_frame:
+                divide_points = rs.DivideCurve(curve, segment)
+                temp_list.append(divide_points)
+                
+            frame_points.append(temp_list)
+            
+        preprocess = []
+        for column in diagonal_columns:
+            divide_points = rs.DivideCurve(column, segment)
+            preprocess.append(divide_points)
         
-    def generate_surface(self):
+        side_count = 4
+        column_points = []
+        for i in range(0, len(preprocess), side_count):
+            column_points.append(preprocess[i:i+side_count])
+            
+        sub_structure = []
+        for i in range(4):
+            for j in range(1,5):
+                temp = []
+                for k in range(len(tower_frame)):
+                    if k == 4:
+                        last_point = frame_points[k][i][j]
+                        temp.append(last_point)
+                    else:
+                        point_1 = frame_points[k][i][j]
+                        point_2 = column_points[k][i][j]
+                    
+                        temp.extend([point_1, point_2])
+                
+                curve = rs.AddCurve(temp, 1)
+                sub_structure.append(curve)
+            
+                    
+        return sub_structure
+        
+    def generate_facade(self):
         srfs = []
         main_structure = self.generate_main_structure()
         for polyline in main_structure:
             srf = gh.BoundarySurfaces(polyline)
             srfs.append(srf)
         
-        return srfs
+#        facade = 
+        
+        return gh.BrepJoin(srfs)[0]
 
 
 if __name__ == "__main__":
@@ -163,47 +211,10 @@ if __name__ == "__main__":
     SIZE = 32
     
     tower_obj = Tower(ORIGIN, SIZE, SIZE, VERTICAL_HEIGHTS, frame_angle)
-    tower_frame = tower_obj.rotate_frame()
-    tower_struc = tower_obj.generate_main_structure()
-    tower = tower_obj.generate_surface()
+    
+    tower_facade = tower_obj.generate_facade()
+    main_structure = tower_obj.generate_main_structure()
     sub_structure = tower_obj.generate_sub_structure()
     
-    frame_points = []
-    for frame in tower_frame:
-        exploded_frame = rs.ExplodeCurves(frame)
-        temp_list = []
-        
-        for curve in exploded_frame:
-            divide_points = rs.DivideCurve(curve, 5)
-            temp_list.append(divide_points)
-        
-        frame_points.append(temp_list)
-        
-        
-    preprocess = []
-    for column in sub_structure:
-        divide_points = rs.DivideCurve(column, 5)
-        preprocess.append(divide_points)
     
-    column_points = []
-    for i in range(0, len(preprocess), 4):
-        column_points.append(preprocess[i:i+4])
-    
-    
-    d = []
-    for i in range(4):
-        for j in range(1,5):
-            temp = []
-            for k in range(5):
-                if k == 4:
-                    last_point = frame_points[k][i][j]
-                    temp.append(last_point)
-                else:
-                    point_1 = frame_points[k][i][j]
-                    point_2 = column_points[k][i][j]
-                
-                    temp.extend([point_1, point_2])
-            
-            curve = rs.AddCurve(temp, 1)
-            d.append(curve)
-
+    a = tower_obj.generate_core()
