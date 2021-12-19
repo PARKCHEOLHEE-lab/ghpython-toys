@@ -11,9 +11,13 @@ class Point:
         self.y = y
         self.z = z
         
+    def __repr__(self):
+        return "{}".format(self.get_coord())
+        
     def __sub__(self, other_pt):
         x, y, z = self.get_coord()
-        return
+        ox, oy, oz = other_pt.get_coord()
+        return Point(x-ox, y-oy, z-oz)
         
     def get_self_point(self):
         x, y, z = self.get_coord()
@@ -21,11 +25,7 @@ class Point:
         return self_pt
         
     def get_coord(self):
-        return self.x, self.y, self.z
-        
-    def get_vector(self, other_pt):
-        self_pt = self.get_self_point()
-        return other_pt - self_pt
+        return [self.x, self.y, self.z]
         
     def generate_point(self):
         x, y, z = self.get_coord()
@@ -53,3 +53,21 @@ if __name__ == "__main__":
     rec = []
     for pt in rec_pts:
         rec.append(pt.generate_point())
+    
+    
+    rotated = []
+    for pt in rec_pts:
+        x,y,z = pt.get_coord()
+        
+        sin45 = math.sin(45)
+        cos45 = math.cos(45)
+        
+        rx = cos45*x - sin45*y
+        ry = sin45*x + cos45*y
+        
+        rp = Point(rx, ry, z).generate_point()
+        rotated.append(rp)
+        
+        
+#x' = cos(45°) * x - sin(45°) * y
+#y' = sin(45°) * x + cos(45°) * y
