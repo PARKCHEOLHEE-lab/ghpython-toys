@@ -38,62 +38,38 @@ class Point:
     def get_coord(self):
         return [self.x, self.y, self.z]
         
+    def distance_to(self, other_pt):
+        x, y, _ = self.get_coord()
+        ox, oy, _ = other_pt.get_coord()
+        
+        distance = ((ox-x)**2 + (oy-y)**2) ** 0.5
+        
+        return distance
+        
     def generate_point(self):
         x, y, z = self.get_coord()
         return rg.Point3d(x, y, z)
-        
-        
-class Test:
-    def __init__(self, pts):
-        self.pts = pts
-        
-    def get_pts(self):
-        return self.pts
-        
-    def get_center_point(self):
-        rec_pts = self.get_pts()
-        zip_pts = zip(*rec_pts)
-        
-        min_x, min_y = min(zip_pts[0]), min(zip_pts[1])
-        max_x, max_y = max(zip_pts[0]), max(zip_pts[1])
-       
-        x = max_x*0.5 + min_x*0.5
-        y = max_y*0.5 + min_y*0.5
-        z = 0
-        
-        return Point(x,y,z)
-        
-    def generate_rotate_pts(self):
-        rec_pts = self.get_pts()
-        degree = 45
-        
-        rotated_rec_pts = []
-        for pt in rec_pts:
-            x, y, z = pt.get_coord()
-            
-            sin45 = math.sin(math.radians(degree))
-            cos45 = math.cos(math.radians(degree))
-            cx, cy, _ = self.get_center_point()
-            
-            rx = cx + (cos45*(x-cx) - sin45*(y-cy))
-            ry = cy + (sin45*(x-cx) + cos45*(y-cy))
-            
-            rp = Point(rx, ry, z)
-            rotated_rec_pts.append(rp)
-        
-        return rotated_rec_pts
-        
-    def generate_rectangle(self):
-        rotated_rec_pts = self.generate_rotate_pts()
-        converted_rec_pts = [pt.generate_point() for pt in rotated_rec_pts]
-        
-        return rg.PolylineCurve(converted_rec_pts)
         
         
 class Rectangle:
     def __init__(self, origin, size):
         self.origin = origin
         self.size = size
+        
+    def __getitem__(self, i):
+        rectangle_pts = self.get_rectangle_pts()
+        return rectangle_pts[i]
+        
+    def __repr__(self):
+        return "{}".format(self.get_rectangle_pts())
+        
+    def __add__(self, vector):
+        origin = self.get_origin()
+        size = self.get_size()
+        
+        added_rectangle = Rectangle(origin+vector, size)
+        
+        return added_rectangle
         
     def get_origin(self):
         return self.origin
@@ -122,113 +98,105 @@ class Rectangle:
 
 
 class Zigzag(Rectangle):
-    def __init__(self, bbox, size):
-        self.bbox = bbox
-#        self.origin = 
-        Rectangle.__init__(self, bbox[0], size)
+    def __init__(self, boundary, size):
+        self.boundary = boundary
         
-    def pattern_start_origin(self):
-        return
+        origin = self.get_pattern_origin()
+        Rectangle.__init__(self, origin, size)
+        
+    def get_boundary_pts(self):
+        boundary_points = self.boundary
+        
+        converted_boundary_points = []
+        for bp in boundary_points:
+            x, y, z = bp
+            converted_bp = Point(x, y, z)
+            converted_boundary_points.append(converted_bp)
+        
+        return converted_boundary_points
+        
+    def get_size(self):
+        return self.size
+        
+    def get_pattern_origin(self):
+        scaled_bbox = self.get_scaled_bbox()
+        origin = scaled_bbox[0]
+        return origin
+        
+    def get_scaled_bbox(self):
+        boundary_pts = self.get_boundary_pts()
+        zip_boundary_pts = zip(*boundary_pts)
+    
+        min_x, min_y = min(zip_boundary_pts[0]), min(zip_boundary_pts[1])
+        max_x, max_y = max(zip_boundary_pts[0]), max(zip_boundary_pts[1])
+        z = 0
+        
+        s = 30
+        p0 = Point(min_x, min_y, z) + Point(-s, -s, z)
+        p1 = Point(min_x, max_y, z) + Point(-s, +s, z)
+        p2 = Point(max_x, max_y, z) + Point(+s, +s, z)
+        p3 = Point(max_x, min_y, z) + Point(+s, -s, z)
+        p4 = p0
+        
+        scaled_bbox = [p0, p1, p2, p3, p4]
+        return scaled_bbox
+        
+    def get_scaled_bbox_size(self):
+        scaled_bbox = self.get_scaled_bbox()
+        width = scaled_bbox[0].distance_to(scaled_bbox[3])
+        height = scaled_bbox[0].distance_to(scaled_bbox[1])
+        
+        return width, height
         
     def generate_pattern(self):
-        rectangle_pts = self.get_rectangle_pts()
+        origin = self.get_pattern_origin()
+        base_rec_pts = self.get_rectangle_pts()
+        base_rec_polyline = self.generate_rectangle()
         
-        count = 0
-        while count < 10:
+        size = self.get_size()
+        width, height = self.get_scaled_bbox_size()
+        
+        height_count = int(height / size) * 2
+        width_count = int(width / size)
+        
+        rec_polyline = []
+        rec_pts = []
+        
+        for i in range(height_count):
+            curr_origin = origin
             
-            curr_pts = rectangle_pts
-            temp_pts = []
-            for i in range(len(rectangle_pts)-1):
-                anchor = rectangle_pts[1]
-                vector = rectangle_pts[i] - rectangle_pts[0]
+            if i == 0:
+                copied_rec = Rectangle(curr_origin, size)
+                rec_polyline.append(copied_rec.generate_rectangle())
+                rec_pts.append(copied_rec)
                 
-                copied_pt = anchor + vector
-                temp_pts.append(copied_pt)
+                origin = rec_pts[-1][2]*0.5 + rec_pts[-1][3]*0.5
             
-            count += 1
-        
-        
-        return
-
+            elif i % 2 != 0:
+                copied_rec = Rectangle(curr_origin, size)
+                rec_polyline.append(copied_rec.generate_rectangle())                
+                rec_pts.append(copied_rec)
+                
+                origin = rec_pts[-2][1]
+                
+            else:
+                copied_rec = Rectangle(curr_origin, size)
+                rec_polyline.append(copied_rec.generate_rectangle())                
+                rec_pts.append(copied_rec)
+                
+                origin = rec_pts[-1][2]*0.5 + rec_pts[-1][3]*0.5
+                
+            
+            for j in range(2, width_count, 2):
+                vector = Point(size*j, 0, 0)
+                rec_polyline.append((copied_rec + vector).generate_rectangle())
+            
+        return rec_polyline
 
 if __name__ == "__main__":
-#    p0 = Point(0,0,0)
-#    p1 = Point(5,0,0)
-#    p2 = Point(5,5,0)
-#    p3 = Point(0,5,0)
-#    p4 = p0
-#    
-#    rectangle_pts = [p0, p1, p2, p3, p4]
-#    rectangle = Rectangle(rectangle_pts)
-#    
-#    rotated_rec = rectangle.generate_rectangle()
-#    rotated_pts = rectangle.generate_rotate_pts()
-#    
-#    zgzg_rec_pts = []
-#    for i in range(len(rotated_pts)-1):
-#        anchor = rotated_pts[2]*0.5 + rotated_pts[1]*0.5
-#        vector = rotated_pts[i] - rotated_pts[0]
-#        
-#        zgzg_rec_pt = vector + anchor
-#        zgzg_rec_pts.append(zgzg_rec_pt)
-#    
-#    rotated_pts = [pt.generate_point() for pt in rotated_pts]
-#    test = [rotated_rec]
-#    
-#    
-#    count = 0
-#    all_pts = [rotated_pts]
-#    while count < 10:
-#        curr_pts = rotated_pts
-#        temp_pts = []
-#        for i in range(len(curr_pts)-1):
-#            anchor = rotated_pts[2]*0.5 + rotated_pts[1]*0.5
-#            vector = rotated_pts[i] - rotated_pts[0]
-#        
-#            zgzg_rec_pt = vector + anchor
-#            temp_pts.append(zgzg_rec_pt)
-#            
-#        temp_pts.append(temp_pts[0])
-#        zgzg_rec_polyline = rg.PolylineCurve(temp_pts)
-#        test.append(zgzg_rec_polyline)
-#        all_pts.append(temp_pts)
-#        
-#        rotated_pts = temp_pts
-#        
-#        count += 1
-    
-    
-    ############## Scaled Bounding Box ##############
-    if boundary_points[0] != boundary_points[-1]:
-        boundary_points.append(boundary_points[0])
-        
-    converted_boundary_points = []
-    for bp in boundary_points:
-        x, y, z = bp
-        converted_bp = Point(x, y, z)
-        converted_boundary_points.append(converted_bp)
-        
-    zip_bpts = zip(*converted_boundary_points)
-    
-    min_x, min_y = min(zip_bpts[0]), min(zip_bpts[1])
-    max_x, max_y = max(zip_bpts[0]), max(zip_bpts[1])
-    z = 0
-    
-    s = 30
-    
-    p0 = Point(min_x, min_y, z) + Point(-s, -s, z)
-    p1 = Point(min_x, max_y, z) + Point(-s, +s, z)
-    p2 = Point(max_x, max_y, z) + Point(+s, +s, z)
-    p3 = Point(max_x, min_y, z) + Point(+s, -s, z)
-    p4 = p0
-    
-    d = [p0, p1, p2, p3, p4]
-    
     
     ############## Generate Pattern ##############
-    base_rec = Zigzag(d, 3)
+    pattern_size = 3
+    base_rec_pts = Zigzag(boundary_points, pattern_size)    
     
-    base_rec.generate_pattern()
-    
-    
-    
+    pattern = base_rec_pts.generate_pattern()
