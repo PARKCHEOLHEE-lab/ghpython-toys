@@ -1,7 +1,6 @@
 ﻿import math
 import random
 import Rhino.Geometry as rg
-import Rhino.RhinoDoc as rc
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 
@@ -74,7 +73,6 @@ class Rectangle:
             
             sin45 = math.sin(math.radians(degree))
             cos45 = math.cos(math.radians(degree))
-            
             cx, cy, _ = self.get_center_point()
             
             rx = cx + (cos45*(x-cx) - sin45*(y-cy))
@@ -92,14 +90,73 @@ class Rectangle:
         return rg.PolylineCurve(converted_rec_pts)
         
 if __name__ == "__main__":
-    p0 = Point(0,0,0)
-    p1 = Point(5,0,0)
-    p2 = Point(5,5,0)
-    p3 = Point(0,5,0)
-    p4 = p0
+#    p0 = Point(0,0,0)
+#    p1 = Point(5,0,0)
+#    p2 = Point(5,5,0)
+#    p3 = Point(0,5,0)
+#    p4 = p0
+#    
+#    rectangle_pts = [p0, p1, p2, p3, p4]
+#    rectangle = Rectangle(rectangle_pts)
+#    
+#    rotated_rec = rectangle.generate_rectangle()
+#    rotated_pts = rectangle.generate_rotate_pts()
+#    
+#    zgzg_rec_pts = []
+#    for i in range(len(rotated_pts)-1):
+#        anchor = rotated_pts[2]*0.5 + rotated_pts[1]*0.5
+#        vector = rotated_pts[i] - rotated_pts[0]
+#        
+#        zgzg_rec_pt = vector + anchor
+#        zgzg_rec_pts.append(zgzg_rec_pt)
+#    
+#    rotated_pts = [pt.generate_point() for pt in rotated_pts]
+#    test = [rotated_rec]
+#    
+#    
+#    count = 0
+#    all_pts = [rotated_pts]
+#    while count < 10:
+#        curr_pts = rotated_pts
+#        temp_pts = []
+#        for i in range(len(curr_pts)-1):
+#            anchor = rotated_pts[2]*0.5 + rotated_pts[1]*0.5
+#            vector = rotated_pts[i] - rotated_pts[0]
+#        
+#            zgzg_rec_pt = vector + anchor
+#            temp_pts.append(zgzg_rec_pt)
+#            
+#        temp_pts.append(temp_pts[0])
+#        zgzg_rec_polyline = rg.PolylineCurve(temp_pts)
+#        test.append(zgzg_rec_polyline)
+#        all_pts.append(temp_pts)
+#        
+#        rotated_pts = temp_pts
+#        
+#        count += 1
     
-    rectangle_pts = [p0, p1, p2, p3, p4]
-    rectangle = Rectangle(rectangle_pts)
     
-    rotated_rec = rectangle.generate_rectangle()
-    a = rectangle.generate_rotate_pts()
+    ############## Scaled Bounding Box ##############
+    if boundary_points[0] != boundary_points[-1]:
+        boundary_points.append(boundary_points[0])
+        
+    converted_boundary_points = []
+    for bp in boundary_points:
+        x, y, z = bp
+        converted_bp = Point(x, y, z)
+        converted_boundary_points.append(converted_bp)
+        
+    zip_bpts = zip(*converted_boundary_points)
+    
+    min_x, min_y = min(zip_bpts[0]), min(zip_bpts[1])
+    max_x, max_y = max(zip_bpts[0]), max(zip_bpts[1])
+    z = 0
+    
+    s = 30
+    
+    p0 = Point(min_x, min_y, z) + Point(-s, -s, z)
+    p1 = Point(min_x, max_y, z) + Point(-s, +s, z)
+    p2 = Point(max_x, max_y, z) + Point(+s, +s, z)
+    p3 = Point(max_x, min_y, z) + Point(+s, -s, z)
+    
+    d = [p0.generate_point(), p1.generate_point(), p2.generate_point(), p3.generate_point()]
