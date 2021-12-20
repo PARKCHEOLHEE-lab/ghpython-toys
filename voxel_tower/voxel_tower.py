@@ -43,7 +43,7 @@ class Point:
         return rg.Point3d(x, y, z)
         
         
-class Rectangle:
+class Test:
     def __init__(self, pts):
         self.pts = pts
         
@@ -89,6 +89,68 @@ class Rectangle:
         
         return rg.PolylineCurve(converted_rec_pts)
         
+        
+class Rectangle:
+    def __init__(self, origin, size):
+        self.origin = origin
+        self.size = size
+        
+    def get_origin(self):
+        return self.origin
+        
+    def get_size(self):
+        return self.size
+        
+    def get_rectangle_pts(self):
+        origin = self.get_origin()
+        size = self.get_size()
+        O = 0
+        
+        p0 = origin
+        p1 = origin + Point(O, size, O)
+        p2 = origin + Point(size, size, O)
+        p3 = origin + Point(size, O, O)
+        p4 = p0
+        
+        return [p0, p1, p2, p3, p4]
+        
+    def generate_rectangle(self):
+        rectangle_pts = self.get_rectangle_pts()
+        converted_pts = [pt.generate_point() for pt in rectangle_pts]
+        
+        return rg.PolylineCurve(converted_pts)
+
+
+class Zigzag(Rectangle):
+    def __init__(self, bbox, size):
+        self.bbox = bbox
+#        self.origin = 
+        Rectangle.__init__(self, bbox[0], size)
+        
+    def pattern_start_origin(self):
+        return
+        
+    def generate_pattern(self):
+        rectangle_pts = self.get_rectangle_pts()
+        
+        count = 0
+        while count < 10:
+            
+            curr_pts = rectangle_pts
+            temp_pts = []
+            for i in range(len(rectangle_pts)-1):
+                anchor = rectangle_pts[1]
+                vector = rectangle_pts[i] - rectangle_pts[0]
+                
+                copied_pt = anchor + vector
+                temp_pts.append(copied_pt)
+            
+            count += 1
+        
+        
+        return
+
+
 if __name__ == "__main__":
 #    p0 = Point(0,0,0)
 #    p1 = Point(5,0,0)
@@ -158,5 +220,15 @@ if __name__ == "__main__":
     p1 = Point(min_x, max_y, z) + Point(-s, +s, z)
     p2 = Point(max_x, max_y, z) + Point(+s, +s, z)
     p3 = Point(max_x, min_y, z) + Point(+s, -s, z)
+    p4 = p0
     
-    d = [p0.generate_point(), p1.generate_point(), p2.generate_point(), p3.generate_point()]
+    d = [p0, p1, p2, p3, p4]
+    
+    
+    ############## Generate Pattern ##############
+    base_rec = Zigzag(d, 3)
+    
+    base_rec.generate_pattern()
+    
+    
+    
