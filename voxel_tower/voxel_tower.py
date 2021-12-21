@@ -346,24 +346,26 @@ class Pattern(Rectangle):
         rotate_patterns = self.rotate_pattern()
         boundary = self.get_boundary_pts()
         
-        for pt in rotate_patterns[667][:-1]:
-            print(pt.point_in_polygon(boundary))
+        inside_pattern = []
+        for pattern in rotate_patterns:
+            count = 0
+            
+            for pt in pattern[:-1]:
+                check = pt.point_in_polygon(boundary)
+                
+                if check == False:
+                    count += 1
+                if count > 1:
+                    break
+            
+            if count < 2:
+                inside_pattern.append(pattern.generate_polyline())
         
-#        for pattern in rotate_patterns:
-#            for pt in pattern[:-1]:
-#                print(pt.point_in_polygon(boundary))
-#                
-#            break
-        
-        return [p.generate_polyline() for p in rotate_patterns]
+        return inside_pattern
 
 
 if __name__ == "__main__":
-    
-    ############## Variable Definition ##############
-    pattern_size = 3
-    base_rec_pts = Pattern(boundary_points, pattern_size)  
-    
-    
-    ############## Generate Pattern ##############  
-    pattern = base_rec_pts.cull_pattern()
+    pass
+#    pattern_size = 3
+#    base_rec_pts = Pattern(boundary_points, pattern_size)  
+#    pattern = base_rec_pts.cull_pattern()
