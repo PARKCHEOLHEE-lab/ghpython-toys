@@ -89,39 +89,32 @@ class Line:
         return self.p2[0], self.p2[1]
         
     def intersect_point(self, line2):
-        # 두 선분의 교점을 찾는 함수
         p1 = self.get_p1_coord()
         p2 = self.get_p2_coord()
         p3 = line2.get_p1_coord()
         p4 = line2.get_p2_coord()
         
-        # 선분1 => (x1,y1) to (x2, y2); 선분2 => (x3,y3) to (x4, y4)
         x1, y1 = p1
         x2, y2 = p2
         x3, y3 = p3
         x4, y4 = p4
         z = 0
         
-        # 완전히 교차하는 경우에만 점을 생성 
-        # ex) 선분AB의 정점이 선분CD의 사이에 있으면 교차하지 않는 것으로 판단
         denom = (y4-y3)*(x2-x1) - (x4-x3)*(y2-y1)
-        
-        # 선분이 평행하지 않은 경우
         if denom != 0:
             ua = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / denom
             ub = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / denom
-            if (0 < ua < 1) and (0 < ub < 1): # 교차여부 확인
+            if (0 < ua < 1) and (0 < ub < 1):
                 ix = x1 + ua * (x2-x1)
                 iy = y1 + ua * (y2-y1)
                 
                 intersect_point = Point(ix, iy, z)
                 return intersect_point
                 
-        # 선분이 평행한 경우
         elif denom == 0:
             ua = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3))
             ub = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3))
-            if (0 < ua < 1) and (0 < ub < 1): # 교차여부 확인
+            if (0 < ua < 1) and (0 < ub < 1):
                 ix = x1 + ua * (x2-x1)
                 iy = y1 + ua * (y2-y1)
                 
@@ -380,18 +373,18 @@ class Pattern(Rectangle):
 
 
 class Voxel:
-    def __init__(self, closed_brep):
-        self.closed_brep = closed_brep
+    def __init__(self, brep):
+        self.brep = brep
         
-    def get_closed_brep(self):
-        return self.closed_brep
+    def get_brep(self):
+        return self.brep
         
-    def get_closed_brep_pts(self):
-        closed_brep = self.get_closed_brep()
-        closed_brep_pts = gh.DeconstructBrep(closed_brep)[2]
+    def get_brep_pts(self):
+        brep = self.get_brep()
+        brep_pts = gh.DeconstructBrep(brep)[2]
         
         converted_pts = []
-        for pt in closed_brep_pts:
+        for pt in brep_pts:
             x, y, z = pt
             converted_pt = Point(x, y, z)
             converted_pts.append(converted_pt)
@@ -400,8 +393,8 @@ class Voxel:
         return converted_pts
         
     def generate_brep_bbox(self):
-        closed_brep_pts = self.get_closed_brep_pts()
-        zip_brep_pts = zip(*closed_brep_pts)
+        brep_pts = self.get_brep_pts()
+        zip_brep_pts = zip(*brep_pts)
     
         min_x, max_x = min(zip_brep_pts[0]), max(zip_brep_pts[0])
         min_y, max_y = min(zip_brep_pts[1]), max(zip_brep_pts[1])
@@ -432,8 +425,8 @@ if __name__ == "__main__":
     
     ############# Generate Bounding Box #############
 #    
-    closed_brep_pts = gh.DeconstructBrep(closed_brep)[2]
-    zip_brep_pts = zip(*closed_brep_pts)
+    brep_pts = gh.DeconstructBrep(brep)[2]
+    zip_brep_pts = zip(*brep_pts)
     
     min_x, max_x = min(zip_brep_pts[0]), max(zip_brep_pts[0])
     min_y, max_y = min(zip_brep_pts[1]), max(zip_brep_pts[1])
@@ -453,5 +446,5 @@ if __name__ == "__main__":
 #         rs.AddPoint(max_x, min_y, max_z)]
 #         
          
-    voxel = Voxel(closed_brep)
+    voxel = Voxel(brep)
     c = voxel.select_bbox_face()
