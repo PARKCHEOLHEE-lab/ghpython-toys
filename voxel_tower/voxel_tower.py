@@ -1,6 +1,4 @@
-﻿import math
-import random
-import Rhino.Geometry as rg
+﻿import Rhino.Geometry as rg
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 
@@ -53,7 +51,7 @@ class Point:
         x, y, z = self.get_coord()
         
         pt = Point(x, y, z)
-        ept = Point(10000, pt[1], z)
+        ept = Point(10000, y, z)
         ray = Line(pt, ept)
         
         count = 0
@@ -133,6 +131,8 @@ class Line:
 class Polyline:
     def __init__(self, pts):
         self.pts = pts
+        if self.pts[0] != self.pts[-1]:
+            self.pts.append(self.pts[0])
         
     def __len__(self):
         polyline_pts = self.get_polyline_pts()
@@ -148,11 +148,26 @@ class Polyline:
     def get_polyline_pts(self):
         return self.pts
         
+    def get_area(self):
+        polyline_pts = self.get_polyline_pts()
+        area = 0
+        for i in range(len(polyline_pts)-1):
+            x1, y1, _ = polyline_pts[i]
+            x2, y2, _ = polyline_pts[i+1]
+            
+            area += x1*y2 - x2*y1
+        
+        return abs(area*0.5)
+        
     def generate_polyline(self):
         polyline_pts = self.get_polyline_pts()
         converted_pts = [pt.generate_point() for pt in polyline_pts]
         
         return rg.PolylineCurve(converted_pts)
+        
+    def generate_polysurface(self):
+        polyline = self.generate_polyline()
+        return 
 
 
 class Rectangle:
@@ -364,8 +379,79 @@ class Pattern(Rectangle):
         return inside_pattern
 
 
+class Voxel:
+    def __init__(self, closed_brep):
+        self.closed_brep = closed_brep
+        
+    def get_closed_brep(self):
+        return self.closed_brep
+        
+    def get_closed_brep_pts(self):
+        closed_brep = self.get_closed_brep()
+        closed_brep_pts = gh.DeconstructBrep(closed_brep)[2]
+        
+        converted_pts = []
+        for pt in closed_brep_pts:
+            x, y, z = pt
+            converted_pt = Point(x, y, z)
+            converted_pts.append(converted_pt)
+        
+        
+        return converted_pts
+        
+    def generate_brep_bbox(self):
+        closed_brep_pts = self.get_closed_brep_pts()
+        zip_brep_pts = zip(*closed_brep_pts)
+    
+        min_x, max_x = min(zip_brep_pts[0]), max(zip_brep_pts[0])
+        min_y, max_y = min(zip_brep_pts[1]), max(zip_brep_pts[1])
+        min_z, max_z = min(zip_brep_pts[2]), max(zip_brep_pts[2])
+        
+        iteration = [min_x, min_y, min_x, max_y, max_x, max_y, max_x, min_y]
+        
+        bbox_top_pts = []
+        bbox_bottom_pts = []
+        for i in range(0, len(iteration), 2):
+            bbox_top_pt = Point(iteration[i], iteration[i+1], max_z)
+            bbox_bottom_pt = Point(iteration[i], iteration[i+1], min_z)
+            
+            bbox_top_pts.append(bbox_top_pt)
+            bbox_bottom_pts.append(bbox_bottom_pt)
+        
+        return bbox_top_pts, bbox_bottom_pts
+        
+    def select_bbox_face(self):
+        bbox_top_pts, bbox_bottom_pts = self.generate_brep_bbox()
+        
+        return
+
+
 if __name__ == "__main__":
-    pass
-#    pattern_size = 3
-#    base_rec_pts = Pattern(boundary_points, pattern_size)  
-#    pattern = base_rec_pts.cull_pattern()
+    
+    voxel_size = 3
+    
+    ############# Generate Bounding Box #############
+#    
+    closed_brep_pts = gh.DeconstructBrep(closed_brep)[2]
+    zip_brep_pts = zip(*closed_brep_pts)
+    
+    min_x, max_x = min(zip_brep_pts[0]), max(zip_brep_pts[0])
+    min_y, max_y = min(zip_brep_pts[1]), max(zip_brep_pts[1])
+    min_z, max_z = min(zip_brep_pts[2]), max(zip_brep_pts[2])
+    height = abs(min_z - max_z)
+#    
+#    
+    a = [rs.AddPoint(min_x, min_y, min_z),
+         rs.AddPoint(min_x, max_y, min_z),
+         rs.AddPoint(max_x, max_y, min_z),
+         rs.AddPoint(max_x, min_y, min_z)]
+#    
+#    
+#    b = [rs.AddPoint(min_x, min_y, max_z),
+#         rs.AddPoint(min_x, max_y, max_z),
+#         rs.AddPoint(max_x, max_y, max_z),
+#         rs.AddPoint(max_x, min_y, max_z)]
+#         
+         
+    voxel = Voxel(closed_brep)
+    c = voxel.select_bbox_face()
