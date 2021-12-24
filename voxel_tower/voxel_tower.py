@@ -158,9 +158,10 @@ class Polyline:
         
         return rg.PolylineCurve(converted_pts)
         
-    def generate_polysurface(self):
+    def generate_surface(self):
         polyline = self.generate_polyline()
-        return 
+        surface = gh.BoundarySurfaces(polyline)
+        return surface
 
 
 class Rectangle:
@@ -414,9 +415,10 @@ class Voxel:
         return bbox_top_pts, bbox_bottom_pts
         
     def select_bbox_face(self):
-        bbox_top_pts, bbox_bottom_pts = self.generate_brep_bbox()
+        _, bbox_bottom_pts = self.generate_brep_bbox()
+        selected_face = Polyline(bbox_bottom_pts).generate_surface()
         
-        return
+        return selected_face
 
 
 if __name__ == "__main__":
