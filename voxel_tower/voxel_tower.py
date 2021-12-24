@@ -351,7 +351,7 @@ class Pattern(Rectangle):
         
         return rotate_patterns
         
-    def cull_pattern(self):
+    def inside_pattern(self):
         rotate_patterns = self.rotate_pattern()
         boundary = self.get_boundary_pts()
         
@@ -374,11 +374,15 @@ class Pattern(Rectangle):
 
 
 class Voxel:
-    def __init__(self, brep):
+    def __init__(self, brep, voxel_size):
         self.brep = brep
+        self.voxel_size = voxel_size
         
     def get_brep(self):
         return self.brep
+        
+    def get_voxel_size(self):
+        return self.voxel_size
         
     def get_brep_pts(self):
         brep = self.get_brep()
@@ -390,12 +394,22 @@ class Voxel:
             converted_pt = Point(x, y, z)
             converted_pts.append(converted_pt)
         
-        
         return converted_pts
         
-    def generate_brep_bbox(self):
+    def get_brep_zip_pts(self):
         brep_pts = self.get_brep_pts()
         zip_brep_pts = zip(*brep_pts)
+        return zip_brep_pts
+        
+    def get_bbox_height(self):
+        zip_brep_pts = self.get_brep_zip_pts()
+        min_z, max_z = min(zip_brep_pts[2]), max(zip_brep_pts[2])
+        
+        height = abs(min_z - max_z)
+        return height
+        
+    def generate_brep_bbox(self):
+        zip_brep_pts = self.get_brep_zip_pts()
     
         min_x, max_x = min(zip_brep_pts[0]), max(zip_brep_pts[0])
         min_y, max_y = min(zip_brep_pts[1]), max(zip_brep_pts[1])
@@ -414,39 +428,35 @@ class Voxel:
         
         return bbox_top_pts, bbox_bottom_pts
         
-    def select_bbox_face(self):
+    def generate_floor_polyline(self):
         _, bbox_bottom_pts = self.generate_brep_bbox()
         selected_face = Polyline(bbox_bottom_pts).generate_surface()
         
-        return selected_face
+        brep = self.get_brep()
+        voxel_size = self.get_voxel_size()
+        bbox_height = self.get_bbox_height()
+        
+        floor_polylines = []
+        iteration_count = int(bbox_height/voxel_size) + 1
+        for i in range(iteration_count):
+            rs.MoveObject(selected_face, [0, 0, voxel_size])
+            floor = gh.BrepXBrep(selected_face, brep)[0]
+            
+            if type(floor) is list:
+                for f in floor:
+                    floor_polylines.append(f)
+            else:
+                floor_polylines.append(floor)
+            
+        return floor_polylines
+        
+
 
 
 if __name__ == "__main__":
     
     voxel_size = 3
-    
-    ############# Generate Bounding Box #############
-#    
-    brep_pts = gh.DeconstructBrep(brep)[2]
-    zip_brep_pts = zip(*brep_pts)
-    
-    min_x, max_x = min(zip_brep_pts[0]), max(zip_brep_pts[0])
-    min_y, max_y = min(zip_brep_pts[1]), max(zip_brep_pts[1])
-    min_z, max_z = min(zip_brep_pts[2]), max(zip_brep_pts[2])
-    height = abs(min_z - max_z)
-#    
-#    
-    a = [rs.AddPoint(min_x, min_y, min_z),
-         rs.AddPoint(min_x, max_y, min_z),
-         rs.AddPoint(max_x, max_y, min_z),
-         rs.AddPoint(max_x, min_y, min_z)]
-#    
-#    
-#    b = [rs.AddPoint(min_x, min_y, max_z),
-#         rs.AddPoint(min_x, max_y, max_z),
-#         rs.AddPoint(max_x, max_y, max_z),
-#         rs.AddPoint(max_x, min_y, max_z)]
-#         
          
-    voxel = Voxel(brep)
-    c = voxel.select_bbox_face()
+    voxel = Voxel(brep, voxel_size)
+    c = voxel.generate_floor_polyline()
+    print(len(c))
