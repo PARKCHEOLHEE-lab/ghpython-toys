@@ -1,4 +1,5 @@
-﻿import Rhino.Geometry as rg
+﻿import math
+import Rhino.Geometry as rg
 import rhinoscriptsyntax as rs
 import ghpythonlib.components as gh
 
@@ -294,7 +295,9 @@ class Pattern(Rectangle):
         return Point(x, y, z)
         
     def generate_pattern(self):
+        z = self.get_boundary_pts()[0][2]
         origin = self.get_pattern_origin()
+        origin = origin + Point(0, 0, z)
         
         size = self.get_size()
         width, height = self.get_scaled_bbox_size()
@@ -437,26 +440,50 @@ class Voxel:
         bbox_height = self.get_bbox_height()
         
         floor_polylines = []
-        iteration_count = int(bbox_height/voxel_size) + 1
+        iteration_count = int(bbox_height / voxel_size)
         for i in range(iteration_count):
-            rs.MoveObject(selected_face, [0, 0, voxel_size])
+            if i != 0:
+                rs.MoveObject(selected_face, [0, 0, voxel_size])
+            else:
+                rs.MoveObject(selected_face, [0, 0, 0])
+                
             floor = gh.BrepXBrep(selected_face, brep)[0]
             
-            if type(floor) is list:
-                for f in floor:
-                    floor_polylines.append(f)
-            else:
-                floor_polylines.append(floor)
+            if floor is not None:
+                if type(floor) is list:
+                    for f in floor:
+                        floor_polylines.append(f)
+                else:
+                    floor_polylines.append(floor)
             
         return floor_polylines
         
-
-
+    def generate_floor_vertices(self):
+        voxel_size = self.get_voxel_size()
+        bbox_height = self.get_bbox_height()
+        
+        floor_polylines = self.generate_floor_polyline()
+        floor_count = int(bbox_height / voxel_size) + 2
+        floor_vertices = {i:[] for i in range(1, floor_count)}
+        
+        level = 1
+        temp_z = ""
+        for i, floor in enumerate(floor_polylines):
+            curr_vertices = rs.CurvePoints(floor)
+            curr_z = round(curr_vertices[0][2], 3)
+            
+            if i != 0:
+                if temp_z != curr_z:
+                    level += 1
+            
+            floor_vertices[level].append(curr_vertices)
+            temp_z = curr_z
+            
+#        return Pattern(floor_vertices[0], voxel_size).inside_pattern()
 
 if __name__ == "__main__":
     
     voxel_size = 3
-         
     voxel = Voxel(brep, voxel_size)
-    c = voxel.generate_floor_polyline()
-    print(len(c))
+    
+    b = voxel.generate_floor_vertices()
