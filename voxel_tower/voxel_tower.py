@@ -65,10 +65,7 @@ class Point:
                 if ray_intsc_pt is not None:
                     count += 1
                     
-        if count % 2 == 0:
-            return False
-
-        return True
+        return count
         
     def generate_point(self):
         x, y, z = self.get_coord()
@@ -354,26 +351,26 @@ class Pattern(Rectangle):
         
         return rotate_patterns
         
-    def inside_pattern(self):
-        rotate_patterns = self.rotate_pattern()
-        boundary = self.get_boundary_pts()
-        
-        inside_pattern = []
-        for pattern in rotate_patterns:
-            count = 0
-            
-            for pt in pattern[:-1]:
-                check = pt.point_in_polygon(boundary)
-                
-                if check == False:
-                    count += 1
-                if count > 1:
-                    break
-            
-            if count < 2:
-                inside_pattern.append(pattern.generate_polyline())
-        
-        return inside_pattern
+#    def inside_pattern(self):
+#        rotate_patterns = self.rotate_pattern()
+#        boundary = self.get_boundary_pts()
+#        
+#        inside_pattern = []
+#        for pattern in rotate_patterns:
+#            count = 0
+#            
+#            for pt in pattern[:-1]:
+#                check = pt.point_in_polygon(boundary)
+#                
+#                if check == False:
+#                    count += 1
+#                if count > 1:
+#                    break
+#            
+#            if count < 2:
+#                inside_pattern.append(pattern.generate_polyline())
+#        
+#        return inside_pattern
 
 
 class Voxel:
@@ -440,8 +437,8 @@ class Voxel:
         bbox_height = self.get_bbox_height()
         
         floor_polylines = []
-        iteration_count = int(bbox_height / voxel_size)
-        for i in range(iteration_count):
+        floor_count = int(bbox_height / voxel_size) + 1
+        for i in range(floor_count):
             if i != 0:
                 rs.MoveObject(selected_face, [0, 0, voxel_size])
             else:
@@ -463,11 +460,10 @@ class Voxel:
         bbox_height = self.get_bbox_height()
         
         floor_polylines = self.generate_floor_polyline()
-        floor_count = int(bbox_height / voxel_size) + 2
-        floor_vertices = {i:[] for i in range(1, floor_count)}
+        floor_count = int(bbox_height / voxel_size) + 1
+        floor_vertices = {i:[] for i in range(floor_count)}
         
-        level = 1
-        temp_z = ""
+        level = 0
         for i, floor in enumerate(floor_polylines):
             curr_vertices = rs.CurvePoints(floor)
             curr_z = round(curr_vertices[0][2], 3)
@@ -476,14 +472,26 @@ class Voxel:
                 if temp_z != curr_z:
                     level += 1
             
-            floor_vertices[level].append(curr_vertices)
+            floor_vertices[level].append(Pattern(curr_vertices, voxel_size))
             temp_z = curr_z
-            
-#        return Pattern(floor_vertices[0], voxel_size).inside_pattern()
+        
+        return floor_vertices
+        
+    def generate_voxel_tower(self):
+        voxel_size = self.get_voxel_size()
+        floor_vertices = self.generate_floor_vertices()
+        
+        for i in range(len(floor_vertices)):
+            print(i)
+            for vertices in floor_vertices[i]:
+                print(vertices)
+        
+#        return floor_vertices[11][0].inside_pattern()
 
 if __name__ == "__main__":
     
     voxel_size = 3
     voxel = Voxel(brep, voxel_size)
     
-    b = voxel.generate_floor_vertices()
+    b = voxel.generate_voxel_tower()
+    c = voxel.generate_floor_polyline()
