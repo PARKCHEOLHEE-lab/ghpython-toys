@@ -1,9 +1,5 @@
 ﻿import math
-import random
 import Rhino.Geometry as rg
-import Rhino.RhinoDoc as rc
-import rhinoscriptsyntax as rs
-import ghpythonlib.components as gh
 
 
 BASE_ANGLE = 0
@@ -16,3 +12,6 @@ y2 = y1 + math.sin(math.radians(BASE_ANGLE)) * TREE_LENGTH
 
 p1 = rg.Point3d(y1, 0, x1)
 p2 = rg.Point3d(y2, 0, x2)
+
+branch = []
+
